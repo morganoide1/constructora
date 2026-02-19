@@ -43,9 +43,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Conectar a MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/constructora-erp';
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/constructora-erp';
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGO_URL)
   .then(() => {
     console.log('✅ Conectado a MongoDB');
     
