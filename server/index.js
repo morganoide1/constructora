@@ -26,7 +26,7 @@ if (!mongoUrl && process.env.MONGOHOST) {
   mongoUrl = `mongodb://${process.env.MONGOUSER}:${process.env.MONGOPASSWORD}@${process.env.MONGOHOST}:${process.env.MONGOPORT}`;
 }
 if (!mongoUrl) {
-  mongoUrl = 'mongodb://localhost:27017/constructora-erp';
+  mongoUrl = 'mongodb://mongo:TgGjtMMxQTIzldmFsWTAIUysIgegUECh@mongodb.railway.internal:27017';
 }
 
 console.log("MONGOHOST:", process.env.MONGOHOST || "NOT SET");
