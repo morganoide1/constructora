@@ -37,15 +37,15 @@ function Login() {
       </div>
 
       <div className="w-full max-w-md relative">
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4 animate-pulse-glow">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
             <Building2 className="w-10 h-10 text-white" />
           </div>
           <h1 className="font-display text-3xl font-bold text-white">Constructora ERP</h1>
           <p className="text-white/60 mt-2">Sistema de Gestión Integral</p>
         </div>
 
-        <div className="card animate-fade-in stagger-1">
+        <div className="card">
           <h2 className="text-xl font-semibold text-white mb-6">Iniciar Sesión</h2>
           
           {error && (
@@ -86,7 +86,7 @@ function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -96,45 +96,14 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all disabled:opacity-50"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Ingresando...
-                </span>
-              ) : (
-                'Ingresar'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-white/10 text-center">
-            <p className="text-white/50 text-sm">
-              ¿Primera vez? <Link to="/setup" className="text-blue-400 hover:text-blue-300">Configurar sistema</Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default Login;w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Ingresando...
-                </span>
-              ) : (
-                'Ingresar'
-              )}
+              {loading ? 'Ingresando...' : 'Ingresar'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link to="/setup" className="text-sm text-white/50 hover:text-white/70 transition-colors">
+            <Link to="/setup" className="text-sm text-white/50 hover:text-white/70">
               ¿Primera vez? Configurar sistema
             </Link>
           </div>
