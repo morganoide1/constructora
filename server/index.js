@@ -12,6 +12,7 @@ const certificadosRoutes = require('./routes/certificados');
 const transferenciasRoutes = require('./routes/transferencias');
 const edificiosRoutes = require('./routes/edificios');
 const pylRoutes = require('./routes/pyl');
+const beneficiosRoutes = require('./routes/beneficios');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/certificados', certificadosRoutes);
 app.use('/api/transferencias', transferenciasRoutes);
 app.use('/api/edificios', edificiosRoutes);
 app.use('/api/pyl', pylRoutes);
+app.use('/api/beneficios', beneficiosRoutes);
 
 // Ruta para servir la aplicación React
 app.get('*', (req, res) => {

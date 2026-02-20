@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift } from 'lucide-react';
 
 function MiPortal() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [resumen, setResumen] = useState(null);
   const [propiedades, setPropiedades] = useState([]);
+  const [beneficios, setBeneficios] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -18,10 +19,13 @@ function MiPortal() {
       setLoading(true);
       const [resumenRes, propsRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/resumen'),
-        axios.get('/api/clientes/mi-portal/propiedades')
+        axios.get('/api/clientes/mi-portal/propiedades'),
+        axios.get('/api/beneficios')
       ]);
       setResumen(resumenRes.data);
       setPropiedades(propsRes.data);
+      const beneficiosRes = await axios.get("/api/beneficios");
+      setBeneficios(beneficiosRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -193,6 +197,34 @@ function MiPortal() {
           </div>
         )}
       </main>
+
+        {/* Beneficios Cliente Wave */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+              <Gift className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Beneficios Cliente Wave</h2>
+              <p className="text-white/60 text-sm">Descuentos y beneficios exclusivos para ti</p>
+            </div>
+          </div>
+          {beneficios.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {beneficios.map((b) => (
+                <div key={b._id} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-all">
+                  {b.imagen && <img src={b.imagen} alt={b.titulo} className="w-full h-32 object-cover rounded-lg mb-3" />}
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs mb-2 ${b.categoria === "descuento" ? "bg-emerald-500/20 text-emerald-400" : b.categoria === "servicio" ? "bg-blue-500/20 text-blue-400" : b.categoria === "experiencia" ? "bg-purple-500/20 text-purple-400" : "bg-gray-500/20 text-gray-400"}`}>{b.categoria}</span>
+                  <h4 className="font-semibold text-white mb-1">{b.titulo}</h4>
+                  <p className="text-white/60 text-sm mb-3">{b.descripcion}</p>
+                  {b.link && <a href={b.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-sm hover:underline">Ver más →</a>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-white/50 text-center py-8">Próximamente nuevos beneficios</p>
+          )}
+        </div>
     </div>
   );
 }

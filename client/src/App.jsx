@@ -9,6 +9,7 @@ import Ventas from './pages/Ventas';
 import Clientes from './pages/Clientes';
 import Certificados from './pages/Certificados';
 import PYL from './pages/PYL';
+import Beneficios from './pages/Beneficios';
 import MiPortal from './pages/MiPortal';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -66,6 +67,7 @@ function App() {
         <Route path="clientes" element={<Clientes />} />
         <Route path="certificados" element={<Certificados />} />
         <Route path="pyl" element={<PYL />} />
+        <Route path="beneficios" element={<Beneficios />} />
       </Route>
 
       {/* Portal Cliente */}
