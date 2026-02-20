@@ -1,1 +1,43 @@
-const express = require("express"); const router = express.Router(); const Edificio = require("../models/Edificio"); const auth = require("../middleware/auth"); router.get("/", auth, async (req, res) => { try { const edificios = await Edificio.find({ activo: true }).sort({ nombre: 1 }); res.json(edificios); } catch (error) { res.status(500).json({ message: error.message }); } }); router.post("/", auth, async (req, res) => { try { const edificio = new Edificio(req.body); await edificio.save(); res.status(201).json(edificio); } catch (error) { res.status(400).json({ message: error.message }); } }); router.put("/:id", auth, async (req, res) => { try { const edificio = await Edificio.findByIdAndUpdate(req.params.id, req.body, { new: true }); res.json(edificio); } catch (error) { res.status(400).json({ message: error.message }); } }); router.delete("/:id", auth, async (req, res) => { try { await Edificio.findByIdAndUpdate(req.params.id, { activo: false }); res.json({ message: "Edificio eliminado" }); } catch (error) { res.status(500).json({ message: error.message }); } }); module.exports = router;
+const express = require('express');
+const router = express.Router();
+const Edificio = require('../models/Edificio');
+const { auth, adminOnly } = require('../middleware/auth');
+
+router.get('/', auth, async (req, res) => {
+  try {
+    const edificios = await Edificio.find({ activo: true }).sort({ nombre: 1 });
+    res.json(edificios);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post('/', auth, adminOnly, async (req, res) => {
+  try {
+    const edificio = new Edificio(req.body);
+    await edificio.save();
+    res.status(201).json(edificio);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.put('/:id', auth, adminOnly, async (req, res) => {
+  try {
+    const edificio = await Edificio.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(edificio);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.delete('/:id', auth, adminOnly, async (req, res) => {
+  try {
+    await Edificio.findByIdAndUpdate(req.params.id, { activo: false });
+    res.json({ message: 'Edificio eliminado' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+module.exports = router;
