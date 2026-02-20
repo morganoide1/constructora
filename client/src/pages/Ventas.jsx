@@ -63,6 +63,7 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
+    }
   };
 
   const handleVenta = async (e) => {
@@ -93,6 +94,7 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
+    }
   };
 
   const handlePago = async (e) => {
@@ -108,6 +110,7 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
+    }
   };
 
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
