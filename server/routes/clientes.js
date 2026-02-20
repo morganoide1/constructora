@@ -51,7 +51,7 @@ router.get('/:id', auth, async (req, res) => {
 
     // Obtener ventas/propiedades del cliente
     const ventas = await Venta.find({ cliente: cliente._id })
-      .populate({ path: 'propiedad', populate: { path: 'edificio', select: 'nombre driveUrl' } });
+      .populate({ path: 'propiedad', populate: { path: 'edificio', select: 'nombre direccion estado avanceObra porcentajeVendido rentabilidadPozo fechaInicioObra fechaEntregaEstimada driveUrl historialObraUrl' } });
 
     res.json({
       cliente,
@@ -66,7 +66,7 @@ router.get('/:id', auth, async (req, res) => {
 router.get('/mi-portal/propiedades', auth, async (req, res) => {
   try {
     const ventas = await Venta.find({ cliente: req.user._id })
-      .populate({ path: 'propiedad', populate: { path: 'edificio', select: 'nombre driveUrl' } });
+      .populate({ path: 'propiedad', populate: { path: 'edificio', select: 'nombre direccion estado avanceObra porcentajeVendido rentabilidadPozo fechaInicioObra fechaEntregaEstimada driveUrl historialObraUrl' } });
 
     const propiedades = ventas.map(venta => ({
       id: venta._id,

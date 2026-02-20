@@ -135,6 +135,50 @@ function MiPortal() {
               </div>
             </div>
 
+            {/* Info del Edificio */}
+            {p.propiedad?.edificio && (
+              <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="w-5 h-5 text-blue-400" />
+                  <h4 className="font-semibold text-white">{p.propiedad.edificio.nombre}</h4>
+                  {p.propiedad.edificio.estado && (
+                    <span className={`px-2 py-1 rounded-full text-xs ${p.propiedad.edificio.estado === "en_construccion" ? "bg-amber-500/20 text-amber-400" : p.propiedad.edificio.estado === "finalizado" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-500/20 text-blue-400"}`}>{p.propiedad.edificio.estado.replace("_", " ")}</span>
+                  )}
+                </div>
+                {p.propiedad.edificio.direccion && <p className="text-white/60 text-sm mb-3">{p.propiedad.edificio.direccion}</p>}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  {p.propiedad.edificio.avanceObra > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-xl font-bold text-purple-400">{p.propiedad.edificio.avanceObra}%</p>
+                      <p className="text-xs text-white/50">Avance obra</p>
+                    </div>
+                  )}
+                  {p.propiedad.edificio.porcentajeVendido > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-xl font-bold text-emerald-400">{p.propiedad.edificio.porcentajeVendido}%</p>
+                      <p className="text-xs text-white/50">Vendido</p>
+                    </div>
+                  )}
+                  {p.propiedad.edificio.rentabilidadPozo > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-xl font-bold text-blue-400">{p.propiedad.edificio.rentabilidadPozo}%</p>
+                      <p className="text-xs text-white/50">Rentabilidad media</p>
+                    </div>
+                  )}
+                  {p.propiedad.edificio.fechaEntregaEstimada && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-sm font-bold text-white">{new Date(p.propiedad.edificio.fechaEntregaEstimada).toLocaleDateString("es-AR", { month: "short", year: "numeric" })}</p>
+                      <p className="text-xs text-white/50">Entrega est.</p>
+                    </div>
+                  )}
+                </div>
+                {p.propiedad.edificio.historialObraUrl && (
+                  <a href={p.propiedad.edificio.historialObraUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-400 text-sm hover:underline">
+                    <ExternalLink className="w-4 h-4" /> Ver historial de obra
+                  </a>
+                )}
+              </div>
+            )}
             {/* Progreso de pago */}
             <div className="mb-6">
               <div className="flex items-center justify-between text-sm mb-2">
