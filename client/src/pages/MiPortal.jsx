@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink } from 'lucide-react';
 
 function MiPortal() {
   const { user, logout } = useAuth();
@@ -10,6 +10,7 @@ function MiPortal() {
   const [resumen, setResumen] = useState(null);
   const [propiedades, setPropiedades] = useState([]);
   const [beneficios, setBeneficios] = useState([]);
+  const [edificios, setEdificios] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -20,12 +21,15 @@ function MiPortal() {
       const [resumenRes, propsRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/resumen'),
         axios.get('/api/clientes/mi-portal/propiedades'),
-        axios.get('/api/beneficios')
+        axios.get('/api/beneficios'),
+        axios.get('/api/edificios')
       ]);
       setResumen(resumenRes.data);
       setPropiedades(propsRes.data);
       const beneficiosRes = await axios.get("/api/beneficios");
       setBeneficios(beneficiosRes.data);
+      const edificiosRes = await axios.get("/api/edificios");
+      setEdificios(edificiosRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -198,6 +202,60 @@ function MiPortal() {
         )}
       </main>
 
+
+        {/* Proyectos de Inversión */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-emerald-500/20">
+              <Briefcase className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Proyectos de Inversión</h2>
+              <p className="text-white/60 text-sm">Conoce todos nuestros desarrollos</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {edificios.map((ed) => (
+              <div key={ed._id} className="p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-white text-lg">{ed.nombre}</h4>
+                  <span className={`px-2 py-1 rounded-full text-xs ${ed.estado === "en_construccion" ? "bg-amber-500/20 text-amber-400" : ed.estado === "finalizado" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-500/20 text-blue-400"}`}>{ed.estado.replace("_", " ")}</span>
+                </div>
+                {ed.direccion && <p className="text-white/60 text-sm mb-3">{ed.direccion}</p>}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  {ed.avanceObra > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-400">{ed.avanceObra}%</p>
+                      <p className="text-xs text-white/50">Avance obra</p>
+                    </div>
+                  )}
+                  {ed.porcentajeVendido > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-emerald-400">{ed.porcentajeVendido}%</p>
+                      <p className="text-xs text-white/50">Vendido</p>
+                    </div>
+                  )}
+                  {ed.rentabilidadPozo > 0 && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-400">{ed.rentabilidadPozo}%</p>
+                      <p className="text-xs text-white/50">Rentabilidad pozo</p>
+                    </div>
+                  )}
+                  {ed.fechaEntregaEstimada && (
+                    <div className="text-center p-2 bg-white/5 rounded-lg">
+                      <p className="text-sm font-bold text-white">{new Date(ed.fechaEntregaEstimada).toLocaleDateString("es-AR", { month: "short", year: "numeric" })}</p>
+                      <p className="text-xs text-white/50">Entrega est.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Planos</a>}
+                  {ed.historialObraUrl && <a href={ed.historialObraUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Historial</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         {/* Beneficios Cliente Wave */}
         <div className="card">
           <div className="flex items-center gap-3 mb-6">
