@@ -8,6 +8,7 @@ import Cajas from './pages/Cajas';
 import Ventas from './pages/Ventas';
 import Clientes from './pages/Clientes';
 import Certificados from './pages/Certificados';
+import PYL from './pages/PYL';
 import MiPortal from './pages/MiPortal';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -64,6 +65,7 @@ function App() {
         <Route path="ventas" element={<Ventas />} />
         <Route path="clientes" element={<Clientes />} />
         <Route path="certificados" element={<Certificados />} />
+        <Route path="pyl" element={<PYL />} />
       </Route>
 
       {/* Portal Cliente */}

@@ -6,7 +6,7 @@ import {
   Wallet, 
   Building2, 
   Users, 
-  FileText, 
+  FileText, TrendingUp, 
   LogOut, 
   Menu, 
   X,
@@ -19,6 +19,7 @@ const navItems = [
   { path: '/ventas', icon: Building2, label: 'Ventas' },
   { path: '/clientes', icon: Users, label: 'Clientes' },
   { path: '/certificados', icon: FileText, label: 'Certificados' },
+  { path: '/pyl', icon: TrendingUp, label: 'P&L' },
 ];
 
 function Layout() {
