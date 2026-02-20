@@ -15,7 +15,33 @@ const edificioSchema = new mongoose.Schema({
     enum: ['en_construccion', 'finalizado', 'en_venta'],
     default: 'en_construccion'
   },
+  avanceObra: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  porcentajeVendido: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  rentabilidadPozo: {
+    type: Number,
+    default: 0
+  },
+  fechaInicioObra: {
+    type: Date
+  },
+  fechaEntregaEstimada: {
+    type: Date
+  },
   driveUrl: {
+    type: String,
+    trim: true
+  },
+  historialObraUrl: {
     type: String,
     trim: true
   },
