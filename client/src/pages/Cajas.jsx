@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DollarSign, Banknote, Plus, ArrowRightLeft, ArrowUpRight, ArrowDownRight, X, Settings, RefreshCw } from 'lucide-react';
+import { DollarSign, Banknote, Plus, ArrowRightLeft, ArrowUpRight, ArrowDownRight, X, Settings, RefreshCw, Building2 } from 'lucide-react';
 
 function Cajas() {
   const [cajas, setCajas] = useState([]);
   const [movimientos, setMovimientos] = useState([]);
+  const [edificios, setEdificios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMovModal, setShowMovModal] = useState(false);
   const [showTransModal, setShowTransModal] = useState(false);
+  const [showEdificioModal, setShowEdificioModal] = useState(false);
   const [selectedCaja, setSelectedCaja] = useState(null);
-  const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '' });
+  const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
   const [transForm, setTransForm] = useState({ cajaOrigenId: '', cajaDestinoId: '', monto: '', tipoCambio: '', concepto: '' });
+  const [edificioForm, setEdificioForm] = useState({ nombre: '', direccion: '', estado: 'en_construccion' });
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/cajas/dashboard');
-      setCajas(res.data.cajas || []);
-      setMovimientos(res.data.ultimosMovimientos || []);
+      const [cajasRes, edificiosRes] = await Promise.all([
+        axios.get('/api/cajas/dashboard'),
+        axios.get('/api/edificios')
+      ]);
+      setCajas(cajasRes.data.cajas || []);
+      setMovimientos(cajasRes.data.ultimosMovimientos || []);
+      setEdificios(edificiosRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -41,10 +48,11 @@ function Cajas() {
     try {
       await axios.post(`/api/cajas/${selectedCaja._id}/movimiento`, {
         ...movForm,
-        monto: parseFloat(movForm.monto)
+        monto: parseFloat(movForm.monto),
+        edificio: movForm.edificio || undefined
       });
       setShowMovModal(false);
-      setMovForm({ tipo: 'ingreso', monto: '', concepto: '', notas: '' });
+      setMovForm({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -67,6 +75,18 @@ function Cajas() {
     }
   };
 
+  const handleNuevoEdificio = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/edificios', edificioForm);
+      setShowEdificioModal(false);
+      setEdificioForm({ nombre: '', direccion: '', estado: 'en_construccion' });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error');
+    }
+  };
+
   const fmt = (n, c = 'USD') => new Intl.NumberFormat('es-AR', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n || 0);
 
   const needsTipoCambio = () => {
@@ -74,6 +94,11 @@ function Cajas() {
     const origen = cajas.find(c => c._id === transForm.cajaOrigenId);
     const destino = cajas.find(c => c._id === transForm.cajaDestinoId);
     return origen && destino && origen.tipo !== destino.tipo;
+  };
+
+  const getEdificioNombre = (edificioId) => {
+    const edificio = edificios.find(e => e._id === edificioId);
+    return edificio ? edificio.nombre : '-';
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
@@ -92,40 +117,36 @@ function Cajas() {
           {cajas.length > 0 && (
             <button onClick={() => setShowTransModal(true)} className="btn-secondary"><ArrowRightLeft className="w-4 h-4" /> Transferir</button>
           )}
+          <button onClick={() => setShowEdificioModal(true)} className="btn-secondary"><Building2 className="w-4 h-4" /> Nuevo Edificio</button>
           <button onClick={fetchData} className="btn-secondary"><RefreshCw className="w-4 h-4" /></button>
         </div>
       </div>
 
       {/* Cajas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {cajas.map((caja) => (
-          <div key={caja._id} className="card hover:border-white/20 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl ${caja.tipo === 'USD' ? 'bg-green-500/20' : 'bg-blue-500/20'}`}>
-                {caja.tipo === 'USD' ? <DollarSign className="w-6 h-6 text-green-400" /> : <Banknote className="w-6 h-6 text-blue-400" />}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {cajas.map(caja => (
+          <div key={caja._id} className="card group">
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-3 rounded-xl ${caja.tipo === 'USD' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
+                {caja.tipo === 'USD' ? <DollarSign className="w-6 h-6 text-emerald-400" /> : <Banknote className="w-6 h-6 text-blue-400" />}
               </div>
-              <span className={`badge ${caja.tipo === 'USD' ? 'badge-success' : 'badge-info'}`}>{caja.tipo}</span>
+              <span className={`px-2 py-1 rounded-full text-xs ${caja.categoria === 'principal' ? 'bg-purple-500/20 text-purple-300' : 'bg-gray-500/20 text-gray-300'}`}>
+                {caja.categoria}
+              </span>
             </div>
-            <h3 className="font-semibold text-white">{caja.nombre}</h3>
-            <p className="text-xs text-white/50 capitalize mb-3">{caja.categoria}</p>
-            <p className={`text-2xl font-bold ${caja.tipo === 'USD' ? 'text-green-400' : 'text-blue-400'}`}>{fmt(caja.saldo, caja.tipo)}</p>
-            <button 
+            <h3 className="text-white font-medium mb-1">{caja.nombre}</h3>
+            <p className={`text-2xl font-bold ${caja.tipo === 'USD' ? 'text-emerald-400' : 'text-blue-400'}`}>
+              {fmt(caja.saldo, caja.tipo)}
+            </p>
+            <button
               onClick={() => { setSelectedCaja(caja); setShowMovModal(true); }}
-              className="mt-4 w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+              className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" /> Registrar Movimiento
             </button>
           </div>
         ))}
       </div>
-
-      {cajas.length === 0 && (
-        <div className="card text-center py-12">
-          <Banknote className="w-16 h-16 text-white/20 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No hay cajas configuradas</h3>
-          <p className="text-white/60 mb-4">Haz clic en "Configurar Cajas" para crear las cajas iniciales</p>
-        </div>
-      )}
 
       {/* Movimientos */}
       {movimientos.length > 0 && (
@@ -134,26 +155,29 @@ function Cajas() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-white/50 text-sm border-b border-white/10">
-                  <th className="pb-3 font-medium">Fecha</th>
-                  <th className="pb-3 font-medium">Caja</th>
-                  <th className="pb-3 font-medium">Concepto</th>
-                  <th className="pb-3 font-medium">Tipo</th>
-                  <th className="pb-3 font-medium text-right">Monto</th>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 text-white/60 font-medium">Fecha</th>
+                  <th className="text-left py-3 text-white/60 font-medium">Caja</th>
+                  <th className="text-left py-3 text-white/60 font-medium">Edificio</th>
+                  <th className="text-left py-3 text-white/60 font-medium">Concepto</th>
+                  <th className="text-left py-3 text-white/60 font-medium">Tipo</th>
+                  <th className="text-right py-3 text-white/60 font-medium">Monto</th>
                 </tr>
               </thead>
               <tbody>
-                {movimientos.map((m) => (
-                  <tr key={m._id} className="table-row">
-                    <td className="py-3 text-white/70 text-sm">{new Date(m.fecha).toLocaleDateString('es-AR')}</td>
+                {movimientos.map(m => (
+                  <tr key={m._id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-3 text-white/60">{new Date(m.fecha).toLocaleDateString()}</td>
                     <td className="py-3 text-white">{m.caja?.nombre}</td>
+                    <td className="py-3 text-white/70">{m.edificio ? getEdificioNombre(m.edificio) : '-'}</td>
                     <td className="py-3 text-white">{m.concepto}</td>
                     <td className="py-3">
-                      <span className={`badge ${m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? 'badge-success' : 'badge-danger'}`}>
-                        {m.tipo.replace('_', ' ')}
+                      <span className={`flex items-center gap-1 ${m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                        {m.tipo}
                       </span>
                     </td>
-                    <td className={`py-3 text-right font-semibold ${m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <td className={`py-3 text-right font-medium ${m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {m.tipo.includes('ingreso') || m.tipo.includes('entrada') ? '+' : '-'}{fmt(m.monto, m.caja?.tipo || 'ARS')}
                     </td>
                   </tr>
@@ -166,24 +190,32 @@ function Cajas() {
 
       {/* Modal Movimiento */}
       {showMovModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md animate-fade-in">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white">Nuevo Movimiento</h3>
               <button onClick={() => setShowMovModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
             </div>
-            <p className="text-white/60 mb-4">Caja: <span className="text-white font-medium">{selectedCaja?.nombre}</span></p>
+            <p className="text-white/60 mb-4">Caja: <span className="text-white">{selectedCaja?.nombre}</span></p>
             <form onSubmit={handleMovimiento} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setMovForm({...movForm, tipo: 'ingreso'})} className={`p-3 rounded-xl border ${movForm.tipo === 'ingreso' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-white/10 text-white/60'}`}>
-                  <ArrowUpRight className="w-5 h-5 mx-auto mb-1" /> Ingreso
-                </button>
-                <button type="button" onClick={() => setMovForm({...movForm, tipo: 'egreso'})} className={`p-3 rounded-xl border ${movForm.tipo === 'egreso' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-white/10 text-white/60'}`}>
-                  <ArrowDownRight className="w-5 h-5 mx-auto mb-1" /> Egreso
-                </button>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Tipo</label>
+                <select value={movForm.tipo} onChange={(e) => setMovForm({...movForm, tipo: e.target.value})} className="input-field">
+                  <option value="ingreso">Ingreso</option>
+                  <option value="egreso">Egreso</option>
+                </select>
               </div>
               <div>
-                <label className="block text-sm text-white/70 mb-2">Monto ({selectedCaja?.tipo})</label>
+                <label className="block text-sm text-white/70 mb-2">Edificio</label>
+                <select value={movForm.edificio} onChange={(e) => setMovForm({...movForm, edificio: e.target.value})} className="input-field">
+                  <option value="">-- Sin asignar --</option>
+                  {edificios.map(e => (
+                    <option key={e._id} value={e._id}>{e.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Monto</label>
                 <input type="number" step="0.01" value={movForm.monto} onChange={(e) => setMovForm({...movForm, monto: e.target.value})} className="input-field" placeholder="0.00" required />
               </div>
               <div>
@@ -192,7 +224,7 @@ function Cajas() {
               </div>
               <div>
                 <label className="block text-sm text-white/70 mb-2">Notas (opcional)</label>
-                <textarea value={movForm.notas} onChange={(e) => setMovForm({...movForm, notas: e.target.value})} className="input-field" rows="2" />
+                <textarea value={movForm.notas} onChange={(e) => setMovForm({...movForm, notas: e.target.value})} className="input-field" rows="2"></textarea>
               </div>
               <button type="submit" className="w-full btn-primary justify-center">Registrar Movimiento</button>
             </form>
@@ -202,8 +234,8 @@ function Cajas() {
 
       {/* Modal Transferencia */}
       {showTransModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md animate-fade-in">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white">Transferencia entre Cajas</h3>
               <button onClick={() => setShowTransModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
@@ -220,24 +252,55 @@ function Cajas() {
                 <label className="block text-sm text-white/70 mb-2">Caja Destino</label>
                 <select value={transForm.cajaDestinoId} onChange={(e) => setTransForm({...transForm, cajaDestinoId: e.target.value})} className="input-field" required>
                   <option value="">Seleccionar...</option>
-                  {cajas.filter(c => c._id !== transForm.cajaOrigenId).map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}
+                  {cajas.filter(c => c._id !== transForm.cajaOrigenId).map(c => <option key={c._id} value={c._id}>{c.nombre} ({fmt(c.saldo, c.tipo)})</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm text-white/70 mb-2">Monto</label>
-                <input type="number" step="0.01" value={transForm.monto} onChange={(e) => setTransForm({...transForm, monto: e.target.value})} className="input-field" required />
+                <input type="number" step="0.01" value={transForm.monto} onChange={(e) => setTransForm({...transForm, monto: e.target.value})} className="input-field" placeholder="0.00" required />
               </div>
               {needsTipoCambio() && (
                 <div>
                   <label className="block text-sm text-white/70 mb-2">Tipo de Cambio</label>
-                  <input type="number" step="0.01" value={transForm.tipoCambio} onChange={(e) => setTransForm({...transForm, tipoCambio: e.target.value})} className="input-field" placeholder="Ej: 1050" required />
+                  <input type="number" step="0.01" value={transForm.tipoCambio} onChange={(e) => setTransForm({...transForm, tipoCambio: e.target.value})} className="input-field" placeholder="Ej: 1000" required />
                 </div>
               )}
               <div>
-                <label className="block text-sm text-white/70 mb-2">Concepto (opcional)</label>
-                <input type="text" value={transForm.concepto} onChange={(e) => setTransForm({...transForm, concepto: e.target.value})} className="input-field" />
+                <label className="block text-sm text-white/70 mb-2">Concepto</label>
+                <input type="text" value={transForm.concepto} onChange={(e) => setTransForm({...transForm, concepto: e.target.value})} className="input-field" placeholder="Motivo de la transferencia" required />
               </div>
-              <button type="submit" className="w-full btn-primary justify-center"><ArrowRightLeft className="w-4 h-4" /> Transferir</button>
+              <button type="submit" className="w-full btn-primary justify-center">Realizar Transferencia</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuevo Edificio */}
+      {showEdificioModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Nuevo Edificio</h3>
+              <button onClick={() => setShowEdificioModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
+            </div>
+            <form onSubmit={handleNuevoEdificio} className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Nombre del Edificio</label>
+                <input type="text" value={edificioForm.nombre} onChange={(e) => setEdificioForm({...edificioForm, nombre: e.target.value})} className="input-field" placeholder="Ej: Torre Norte" required />
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Dirección</label>
+                <input type="text" value={edificioForm.direccion} onChange={(e) => setEdificioForm({...edificioForm, direccion: e.target.value})} className="input-field" placeholder="Ej: Av. Principal 123" />
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Estado</label>
+                <select value={edificioForm.estado} onChange={(e) => setEdificioForm({...edificioForm, estado: e.target.value})} className="input-field">
+                  <option value="en_construccion">En Construcción</option>
+                  <option value="finalizado">Finalizado</option>
+                  <option value="en_venta">En Venta</option>
+                </select>
+              </div>
+              <button type="submit" className="w-full btn-primary justify-center">Crear Edificio</button>
             </form>
           </div>
         </div>

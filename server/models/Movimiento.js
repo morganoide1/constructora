@@ -6,6 +6,10 @@ const movimientoSchema = new mongoose.Schema({
     ref: 'Caja',
     required: true
   },
+  edificio: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Edificio'
+  },
   tipo: {
     type: String,
     enum: ['ingreso', 'egreso', 'transferencia_entrada', 'transferencia_salida'],
@@ -24,7 +28,6 @@ const movimientoSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  // Para transferencias
   cajaOrigen: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Caja'
@@ -36,7 +39,6 @@ const movimientoSchema = new mongoose.Schema({
   tipoCambio: {
     type: Number
   },
-  // Relaciones opcionales
   venta: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Venta'
@@ -45,7 +47,6 @@ const movimientoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Certificado'
   },
-  // Usuario que realizó el movimiento
   usuario: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

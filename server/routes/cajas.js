@@ -52,7 +52,7 @@ router.post('/setup', auth, adminOnly, async (req, res) => {
 // Registrar movimiento (ingreso/egreso)
 router.post('/:id/movimiento', auth, adminOnly, async (req, res) => {
   try {
-    const { tipo, monto, concepto, referencia, notas } = req.body;
+    const { tipo, monto, concepto, referencia, notas, edificio } = req.body;
     const caja = await Caja.findById(req.params.id);
     
     if (!caja) {
@@ -80,7 +80,8 @@ router.post('/:id/movimiento', auth, adminOnly, async (req, res) => {
       concepto,
       referencia,
       notas,
-      usuario: req.user._id
+      edificio,
+      usuario: req.user._id,
     });
     await movimiento.save();
 
@@ -108,6 +109,7 @@ router.get('/:id/movimientos', auth, adminOnly, async (req, res) => {
 
     const movimientos = await Movimiento.find(query)
       .populate('usuario', 'nombre')
+      .populate('edificio', 'nombre')
       .sort({ fecha: -1 })
       .limit(parseInt(limit));
 
@@ -126,6 +128,7 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
     const ultimosMovimientos = await Movimiento.find()
       .populate('caja', 'nombre tipo')
       .populate('usuario', 'nombre')
+      .populate('edificio', 'nombre')
       .sort({ fecha: -1 })
       .limit(10);
 
