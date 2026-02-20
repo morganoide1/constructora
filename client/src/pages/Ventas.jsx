@@ -236,7 +236,7 @@ function Ventas() {
             <form onSubmit={handleVenta} className="space-y-4">
               <div>
                 <label className="block text-sm text-white/70 mb-2">Propiedad</label>
-                <select value={ventaForm.propiedadId} onChange={(e) => setPropForm({...ventaForm, propiedadId: e.target.value})} className="input-field" required>
+                <select value={ventaForm.propiedadId} onChange={(e) => setVentaForm({...ventaForm, propiedadId: e.target.value})} className="input-field" required>
                   <option value="">Seleccionar...</option>
                   {propiedades.filter(p => p.estado === 'disponible').map(p => <option key={p._id} value={p._id}>{p.codigo} - {p.nombre}</option>)}
                 </select>
