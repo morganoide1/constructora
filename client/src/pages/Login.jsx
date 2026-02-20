@@ -41,8 +41,8 @@ function Login() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
             <Building2 className="w-10 h-10 text-white" />
           </div>
-          <h1 className="font-display text-3xl font-bold text-white">Constructora ERP</h1>
-          <p className="text-white/60 mt-2">Sistema de Gestión Integral</p>
+          <h1 className="font-display text-3xl font-bold text-white">Wave Realty - Constructora</h1>
+          <p className="text-white/60 mt-2">ERP</p>
         </div>
 
         <div className="card">
@@ -102,11 +102,6 @@ function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link to="/setup" className="text-sm text-white/50 hover:text-white/70">
-              ¿Primera vez? Configurar sistema
-            </Link>
-          </div>
         </div>
       </div>
     </div>
