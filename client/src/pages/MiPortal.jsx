@@ -176,6 +176,11 @@ function MiPortal() {
                   <a href={p.propiedad.edificio.historialObraUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-400 text-sm hover:underline">
                     <ExternalLink className="w-4 h-4" /> Ver historial de obra
                   </a>
+                {p.propiedad.edificio.expensasUrl && (
+                  <a href={p.propiedad.edificio.expensasUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-emerald-400 text-sm hover:underline ml-4">
+                    <ExternalLink className="w-4 h-4" /> Ver expensas
+                  </a>
+                )}
                 )}
               </div>
             )}
@@ -290,6 +295,7 @@ function MiPortal() {
                       <p className="text-sm font-bold text-white">{new Date(ed.fechaEntregaEstimada).toLocaleDateString("es-AR", { month: "short", year: "numeric" })}</p>
                       <p className="text-xs text-white/50">Entrega est.</p>
                     </div>
+                  {ed.expensasUrl && <a href={ed.expensasUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Expensas</a>}
                   )}
                 </div>
                 <div className="flex gap-2">

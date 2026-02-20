@@ -18,14 +18,14 @@ function Cajas() {
     nombre: '', direccion: '', estado: 'en_construccion', 
     avanceObra: '', porcentajeVendido: '', rentabilidadPozo: '', 
     fechaInicioObra: '', fechaEntregaEstimada: '', 
-    driveUrl: '', historialObraUrl: '' 
+    driveUrl: '', historialObraUrl: '', expensasUrl: '' 
   });
 
   const emptyEdificioForm = { 
     nombre: '', direccion: '', estado: 'en_construccion', 
     avanceObra: '', porcentajeVendido: '', rentabilidadPozo: '', 
     fechaInicioObra: '', fechaEntregaEstimada: '', 
-    driveUrl: '', historialObraUrl: '' 
+    driveUrl: '', historialObraUrl: '', expensasUrl: '' 
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -124,7 +124,8 @@ function Cajas() {
       fechaInicioObra: edificio.fechaInicioObra ? edificio.fechaInicioObra.split('T')[0] : '',
       fechaEntregaEstimada: edificio.fechaEntregaEstimada ? edificio.fechaEntregaEstimada.split('T')[0] : '',
       driveUrl: edificio.driveUrl || '',
-      historialObraUrl: edificio.historialObraUrl || ''
+      historialObraUrl: edificio.historialObraUrl || '',
+      expensasUrl: edificio.expensasUrl || ''
     });
     setEditingEdificio(edificio._id);
     setShowEdificioModal(true);
@@ -401,6 +402,10 @@ function Cajas() {
                 <div className="col-span-2">
                   <label className="block text-sm text-white/70 mb-2">Link Historial Obra</label>
                   <input type="url" value={edificioForm.historialObraUrl} onChange={(e) => setEdificioForm({...edificioForm, historialObraUrl: e.target.value})} className="input-field" placeholder="https://..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm text-white/70 mb-2">Link Expensas</label>
+                  <input type="url" value={edificioForm.expensasUrl} onChange={(e) => setEdificioForm({...edificioForm, expensasUrl: e.target.value})} className="input-field" placeholder="https://..." />
                 </div>
               </div>
               <button type="submit" className="w-full btn-primary justify-center">{editingEdificio ? 'Guardar Cambios' : 'Crear Edificio'}</button>

@@ -41,6 +41,10 @@ const edificioSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  expensasUrl: {
+    type: String,
+    trim: true
+  },
   historialObraUrl: {
     type: String,
     trim: true
