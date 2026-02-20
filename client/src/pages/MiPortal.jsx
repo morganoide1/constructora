@@ -238,7 +238,7 @@ function MiPortal() {
                   {ed.rentabilidadPozo > 0 && (
                     <div className="text-center p-2 bg-white/5 rounded-lg">
                       <p className="text-2xl font-bold text-blue-400">{ed.rentabilidadPozo}%</p>
-                      <p className="text-xs text-white/50">Rentabilidad pozo</p>
+                      <p className="text-xs text-white/50">Rentabilidad media inversor pozo</p>
                     </div>
                   )}
                   {ed.fechaEntregaEstimada && (

@@ -216,7 +216,7 @@ function Cajas() {
                   {ed.avanceObra > 0 && <span className="px-2 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400">{ed.avanceObra}% avance</span>}
                   {ed.porcentajeVendido > 0 && <span className="px-2 py-1 rounded-full text-xs bg-emerald-500/20 text-emerald-400">{ed.porcentajeVendido}% vendido</span>}
                 </div>
-                {ed.rentabilidadPozo > 0 && <p className="text-xs text-white/50">Rentabilidad pozo: {ed.rentabilidadPozo}%</p>}
+                {ed.rentabilidadPozo > 0 && <p className="text-xs text-white/50">Rentabilidad media inversor pozo: {ed.rentabilidadPozo}%</p>}
               </div>
             ))}
           </div>
@@ -383,7 +383,7 @@ function Cajas() {
                   <input type="number" min="0" max="100" value={edificioForm.porcentajeVendido} onChange={(e) => setEdificioForm({...edificioForm, porcentajeVendido: e.target.value})} className="input-field" placeholder="0" />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/70 mb-2">% Rentabilidad Pozo</label>
+                  <label className="block text-sm text-white/70 mb-2">% Rentabilidad media estimada inversor pozo</label>
                   <input type="number" value={edificioForm.rentabilidadPozo} onChange={(e) => setEdificioForm({...edificioForm, rentabilidadPozo: e.target.value})} className="input-field" placeholder="0" />
                 </div>
                 <div>
