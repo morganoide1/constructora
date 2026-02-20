@@ -303,7 +303,6 @@ function Cajas() {
               <div>
                 <label className="block text-sm text-white/70 mb-2">Link Google Drive</label>
                 <input type="url" value={edificioForm.driveUrl} onChange={(e) => setEdificioForm({...edificioForm, driveUrl: e.target.value})} className="input-field" placeholder="https://drive.google.com/..." />
-                </select>
               </div>
               <button type="submit" className="w-full btn-primary justify-center">Crear Edificio</button>
             </form>
