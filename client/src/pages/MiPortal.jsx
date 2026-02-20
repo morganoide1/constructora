@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen } from 'lucide-react';
 
 function MiPortal() {
   const { user, logout } = useAuth();
@@ -113,6 +113,11 @@ function MiPortal() {
               </div>
               <div className="flex items-center gap-4">
                 <span className={`badge ${p.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{p.estado}</span>
+                {p.propiedad?.edificio?.driveUrl && (
+                  <a href={p.propiedad.edificio.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm">
+                    <FolderOpen className="w-4 h-4" /> Documentos
+                  </a>
+                )}
                 {p.propiedad.valorFuturo && (
                   <div className="text-right">
                     <p className="text-xs text-white/50">Valor futuro</p>

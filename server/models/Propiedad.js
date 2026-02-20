@@ -12,6 +12,10 @@ const propiedadSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  edificio: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Edificio'
+  },
   tipo: {
     type: String,
     enum: ['departamento', 'local', 'cochera', 'terreno'],
@@ -20,7 +24,6 @@ const propiedadSchema = new mongoose.Schema({
   ubicacion: {
     piso: String,
     unidad: String,
-    edificio: String,
     direccion: String
   },
   superficie: {

@@ -5,6 +5,7 @@ import { Building2, Plus, X, DollarSign, Calendar, User, CheckCircle, Clock, Ale
 function Ventas() {
   const [ventas, setVentas] = useState([]);
   const [propiedades, setPropiedades] = useState([]);
+  const [edificios, setEdificios] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [cajas, setCajas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +13,7 @@ function Ventas() {
   const [showVentaModal, setShowVentaModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [selectedVenta, setSelectedVenta] = useState(null);
-  const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', ubicacion: { piso: '', unidad: '' } });
+  const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
   const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, cuotasNum: 12 });
   const [pagoForm, setPagoForm] = useState({ cuotaNumero: '', monto: '', cajaId: '' });
 
@@ -24,11 +25,14 @@ function Ventas() {
       const [ventasRes, propsRes, clientesRes, cajasRes] = await Promise.all([
         axios.get('/api/ventas').catch(() => ({ data: [] })),
         axios.get('/api/ventas/propiedades').catch(() => ({ data: [] })),
+        axios.get('/api/edificios').catch(() => ({ data: [] })),
         axios.get('/api/clientes').catch(() => ({ data: [] })),
         axios.get('/api/cajas').catch(() => ({ data: [] }))
       ]);
       setVentas(ventasRes.data);
       setPropiedades(propsRes.data);
+      const edificiosRes = await axios.get('/api/edificios');
+      setEdificios(edificiosRes.data);
       setClientes(clientesRes.data);
       setCajas(cajasRes.data);
     } finally {
@@ -41,7 +45,7 @@ function Ventas() {
     try {
       await axios.post('/api/ventas/propiedades', { ...propForm, precioLista: parseFloat(propForm.precioLista), valorFuturo: propForm.valorFuturo ? parseFloat(propForm.valorFuturo) : undefined });
       setShowPropModal(false);
-      setPropForm({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', ubicacion: { piso: '', unidad: '' } });
+      setPropForm({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -194,6 +198,13 @@ function Ventas() {
                     <option value="cochera">Cochera</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Edificio</label>
+                <select value={propForm.edificio} onChange={(e) => setPropForm({...propForm, edificio: e.target.value})} className="input-field">
+                  <option value="">-- Seleccionar Edificio --</option>
+                  {edificios.map(e => <option key={e._id} value={e._id}>{e.nombre}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm text-white/70 mb-2">Nombre</label>

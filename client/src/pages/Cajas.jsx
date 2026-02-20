@@ -13,7 +13,7 @@ function Cajas() {
   const [selectedCaja, setSelectedCaja] = useState(null);
   const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
   const [transForm, setTransForm] = useState({ cajaOrigenId: '', cajaDestinoId: '', monto: '', tipoCambio: '', concepto: '' });
-  const [edificioForm, setEdificioForm] = useState({ nombre: '', direccion: '', estado: 'en_construccion' });
+  const [edificioForm, setEdificioForm] = useState({ nombre: '', direccion: '', estado: 'en_construccion', driveUrl: '' });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -80,7 +80,7 @@ function Cajas() {
     try {
       await axios.post('/api/edificios', edificioForm);
       setShowEdificioModal(false);
-      setEdificioForm({ nombre: '', direccion: '', estado: 'en_construccion' });
+      setEdificioForm({ nombre: '', direccion: '', estado: 'en_construccion', driveUrl: '' });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -298,6 +298,11 @@ function Cajas() {
                   <option value="en_construccion">En Construcción</option>
                   <option value="finalizado">Finalizado</option>
                   <option value="en_venta">En Venta</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Link Google Drive</label>
+                <input type="url" value={edificioForm.driveUrl} onChange={(e) => setEdificioForm({...edificioForm, driveUrl: e.target.value})} className="input-field" placeholder="https://drive.google.com/..." />
                 </select>
               </div>
               <button type="submit" className="w-full btn-primary justify-center">Crear Edificio</button>

@@ -15,6 +15,10 @@ const edificioSchema = new mongoose.Schema({
     enum: ['en_construccion', 'finalizado', 'en_venta'],
     default: 'en_construccion'
   },
+  driveUrl: {
+    type: String,
+    trim: true
+  },
   activo: {
     type: Boolean,
     default: true
