@@ -176,11 +176,11 @@ function MiPortal() {
                   <a href={p.propiedad.edificio.historialObraUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-400 text-sm hover:underline">
                     <ExternalLink className="w-4 h-4" /> Ver historial de obra
                   </a>
+                )}
                 {p.propiedad.edificio.expensasUrl && (
                   <a href={p.propiedad.edificio.expensasUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-emerald-400 text-sm hover:underline ml-4">
                     <ExternalLink className="w-4 h-4" /> Ver expensas
                   </a>
-                )}
                 )}
               </div>
             )}
