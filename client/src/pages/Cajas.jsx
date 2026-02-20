@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DollarSign, Banknote, Plus, ArrowRightLeft, ArrowUpRight, ArrowDownRight, X, Settings, RefreshCw, Building2 } from 'lucide-react';
+import { DollarSign, Banknote, Plus, ArrowRightLeft, ArrowUpRight, ArrowDownRight, X, Settings, RefreshCw, Building2, Edit } from 'lucide-react';
 
 function Cajas() {
   const [cajas, setCajas] = useState([]);
@@ -10,6 +10,7 @@ function Cajas() {
   const [showMovModal, setShowMovModal] = useState(false);
   const [showTransModal, setShowTransModal] = useState(false);
   const [showEdificioModal, setShowEdificioModal] = useState(false);
+  const [editingEdificio, setEditingEdificio] = useState(null);
   const [selectedCaja, setSelectedCaja] = useState(null);
   const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
   const [transForm, setTransForm] = useState({ cajaOrigenId: '', cajaDestinoId: '', monto: '', tipoCambio: '', concepto: '' });
@@ -76,6 +77,34 @@ function Cajas() {
   };
 
   const handleNuevoEdificio = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingEdificio) {
+        await axios.put(`/api/edificios/${editingEdificio}`, edificioForm);
+      } else {
+        await axios.post('/api/edificios', edificioForm);
+      }
+      setShowEdificioModal(false);
+      setEdificioForm({ nombre: '', direccion: '', estado: 'en_construccion', driveUrl: '' });
+      setEditingEdificio(null);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const handleEditEdificio = (edificio) => {
+    setEdificioForm({
+      nombre: edificio.nombre,
+      direccion: edificio.direccion || '',
+      estado: edificio.estado,
+      driveUrl: edificio.driveUrl || ''
+    });
+    setEditingEdificio(edificio._id);
+    setShowEdificioModal(true);
+  };
+
+  const oldHandleNuevoEdificio = async (e) => {
     e.preventDefault();
     try {
       await axios.post('/api/edificios', edificioForm);
@@ -149,6 +178,27 @@ function Cajas() {
       </div>
 
       {/* Movimientos */}
+
+      {/* Edificios */}
+      {edificios.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-white mb-4">Edificios ({edificios.length})</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {edificios.map(ed => (
+              <div key={ed._id} className="p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white font-medium">{ed.nombre}</h4>
+                  <button onClick={() => handleEditEdificio(ed)} className="p-1 hover:bg-white/10 rounded"><Edit className="w-4 h-4 text-white/60" /></button>
+                </div>
+                <p className="text-white/60 text-sm">{ed.direccion || "Sin dirección"}</p>
+                <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${ed.estado === "en_construccion" ? "bg-amber-500/20 text-amber-400" : ed.estado === "finalizado" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-500/20 text-blue-400"}`}>
+                  {ed.estado.replace("_", " ")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {movimientos.length > 0 && (
         <div className="card">
           <h3 className="text-lg font-semibold text-white mb-4">Historial de Movimientos</h3>
@@ -280,8 +330,8 @@ function Cajas() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="card w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Nuevo Edificio</h3>
-              <button onClick={() => setShowEdificioModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
+              <h3 className="text-xl font-semibold text-white">{editingEdificio ? "Editar Edificio" : "Nuevo Edificio"}</h3>
+              <button onClick={() => { setShowEdificioModal(false); setEditingEdificio(null); setEdificioForm({ nombre: "", direccion: "", estado: "en_construccion", driveUrl: "" }); }} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
             </div>
             <form onSubmit={handleNuevoEdificio} className="space-y-4">
               <div>
@@ -304,7 +354,7 @@ function Cajas() {
                 <label className="block text-sm text-white/70 mb-2">Link Google Drive</label>
                 <input type="url" value={edificioForm.driveUrl} onChange={(e) => setEdificioForm({...edificioForm, driveUrl: e.target.value})} className="input-field" placeholder="https://drive.google.com/..." />
               </div>
-              <button type="submit" className="w-full btn-primary justify-center">Crear Edificio</button>
+              <button type="submit" className="w-full btn-primary justify-center">{editingEdificio ? "Guardar Cambios" : "Crear Edificio"}</button>
             </form>
           </div>
         </div>

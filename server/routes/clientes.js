@@ -135,4 +135,17 @@ router.get('/mi-portal/resumen', auth, async (req, res) => {
   }
 });
 
+
+// Actualizar cliente
+router.put("/:id", auth, adminOnly, async (req, res) => {
+  try {
+    const { nombre, email, telefono, role } = req.body;
+    const updateData = { nombre, email, telefono, role };
+    const cliente = await User.findByIdAndUpdate(req.params.id, updateData, { new: true }).select("-password");
+    if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
+    res.json(cliente);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 module.exports = router;

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, Plus, X, Mail, Phone, Building2, User } from 'lucide-react';
+import { Users, Plus, X, Mail, Phone, Building2, User, Edit } from 'lucide-react';
 
 function Clientes() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingCliente, setEditingCliente] = useState(null);
   const [form, setForm] = useState({ nombre: '', email: '', password: '', telefono: '', role: 'cliente' });
 
   useEffect(() => { fetchData(); }, []);
@@ -25,15 +26,21 @@ function Clientes() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/auth/register', form);
+      if (editingCliente) { await axios.put(`/api/clientes/${editingCliente}`, form); } else { await axios.post('/api/auth/register', form); }
       setShowModal(false);
-      setForm({ nombre: '', email: '', password: '', telefono: '', role: 'cliente' });
+      setForm({ nombre: "", email: "", password: "", telefono: "", role: "cliente" });
+      setEditingCliente(null);
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error al crear cliente');
     }
   };
 
+  const handleEditCliente = (cliente) => {
+    setForm({ nombre: cliente.nombre, email: cliente.email, password: "", telefono: cliente.telefono || "", role: cliente.role });
+    setEditingCliente(cliente._id);
+    setShowModal(true);
+  };
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
@@ -56,7 +63,7 @@ function Clientes() {
                 {c.nombre?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h3 className="font-semibold text-white">{c.nombre}</h3>
+                <div className="flex items-center justify-between"><h3 className="font-semibold text-white">{c.nombre}</h3><button onClick={() => handleEditCliente(c)} className="p-1 hover:bg-white/10 rounded"><Edit className="w-4 h-4 text-white/60" /></button></div>
                 <p className="text-sm text-white/60">{c.email}</p>
               </div>
             </div>
@@ -96,7 +103,7 @@ function Clientes() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="card w-full max-w-md animate-fade-in">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Nuevo Cliente</h3>
+              <h3 className="text-xl font-semibold text-white">{editingCliente ? "Editar Cliente" : "Nuevo Cliente"}</h3>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">

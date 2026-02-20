@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Building2, Plus, X, DollarSign, Calendar, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Building2, Plus, X, DollarSign, Calendar, User, CheckCircle, Clock, AlertCircle, Edit } from 'lucide-react';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
@@ -10,6 +10,7 @@ function Ventas() {
   const [cajas, setCajas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPropModal, setShowPropModal] = useState(false);
+  const [editingPropiedad, setEditingPropiedad] = useState(null);
   const [showVentaModal, setShowVentaModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [selectedVenta, setSelectedVenta] = useState(null);
@@ -40,12 +41,26 @@ function Ventas() {
     }
   };
 
+  const handleEditPropiedad = (prop) => {
+    setPropForm({
+      codigo: prop.codigo,
+      nombre: prop.nombre,
+      tipo: prop.tipo,
+      precioLista: prop.precioLista,
+      valorFuturo: prop.valorFuturo || "",
+      edificio: prop.edificio?._id || prop.edificio || "",
+      ubicacion: { piso: prop.ubicacion?.piso || "", unidad: prop.ubicacion?.unidad || "" }
+    });
+    setEditingPropiedad(prop._id);
+    setShowPropModal(true);
+  };
   const handlePropiedad = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/ventas/propiedades', { ...propForm, precioLista: parseFloat(propForm.precioLista), valorFuturo: propForm.valorFuturo ? parseFloat(propForm.valorFuturo) : undefined });
+      if (editingPropiedad) { await axios.put(`/api/ventas/propiedades/${editingPropiedad}`, { ...propForm, precioLista: parseFloat(propForm.precioLista), valorFuturo: propForm.valorFuturo ? parseFloat(propForm.valorFuturo) : undefined }); } else { await axios.post("/api/ventas/propiedades", { ...propForm, precioLista: parseFloat(propForm.precioLista), valorFuturo: propForm.valorFuturo ? parseFloat(propForm.valorFuturo) : undefined }); }
       setShowPropModal(false);
       setPropForm({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
+      setEditingPropiedad(null);
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -124,7 +139,7 @@ function Ventas() {
             <div key={p._id} className={`p-4 rounded-xl border ${p.estado === 'disponible' ? 'border-emerald-500/30 bg-emerald-500/5' : p.estado === 'reservado' ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-white/5'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-sm text-white/60">{p.codigo}</span>
-                <span className={`badge ${p.estado === 'disponible' ? 'badge-success' : p.estado === 'reservado' ? 'badge-warning' : 'badge-info'}`}>{p.estado}</span>
+                <div className="flex items-center gap-2"><span className={`badge ${p.estado === 'disponible' ? 'badge-success' : p.estado === 'reservado' ? 'badge-warning' : 'badge-info'}`}>{p.estado}</span><button onClick={() => handleEditPropiedad(p)} className="p-1 hover:bg-white/10 rounded"><Edit className="w-4 h-4 text-white/60" /></button></div>
               </div>
               <h4 className="font-semibold text-white">{p.nombre}</h4>
               {p.ubicacion?.piso && <p className="text-sm text-white/60">Piso {p.ubicacion.piso} - Unidad {p.ubicacion.unidad}</p>}
@@ -181,7 +196,7 @@ function Ventas() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="card w-full max-w-lg animate-fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Nueva Propiedad</h3>
+              <h3 className="text-xl font-semibold text-white">{editingPropiedad ? "Editar Propiedad" : "Nueva Propiedad"}</h3>
               <button onClick={() => setShowPropModal(false)} className="p-2 hover:bg-white/10 rounded-lg"><X className="w-5 h-5 text-white/60" /></button>
             </div>
             <form onSubmit={handlePropiedad} className="space-y-4">
