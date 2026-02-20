@@ -115,7 +115,7 @@ function MiPortal() {
                 <span className={`badge ${p.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{p.estado}</span>
                 {p.propiedad?.edificio?.driveUrl && (
                   <a href={p.propiedad.edificio.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm">
-                    <FolderOpen className="w-4 h-4" /> Documentos
+                    <FolderOpen className="w-4 h-4" /> Planos e imágenes
                   </a>
                 )}
                 {p.propiedad.valorFuturo && (
