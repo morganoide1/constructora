@@ -23,18 +23,17 @@ function Ventas() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ventasRes, propsRes, clientesRes, cajasRes] = await Promise.all([
-        axios.get('/api/ventas').catch(() => ({ data: [] })),
-        axios.get('/api/ventas/propiedades').catch(() => ({ data: [] })),
-        axios.get('/api/edificios').catch(() => ({ data: [] })),
-        axios.get('/api/clientes').catch(() => ({ data: [] })),
-        axios.get('/api/cajas').catch(() => ({ data: [] }))
+      const [ventasRes, propsRes, clientesRes, edificiosRes, cajasRes] = await Promise.all([
+        axios.get("/api/ventas").catch(() => ({ data: [] })),
+        axios.get("/api/ventas/propiedades").catch(() => ({ data: [] })),
+        axios.get("/api/clientes").catch(() => ({ data: [] })),
+        axios.get("/api/edificios").catch(() => ({ data: [] })),
+        axios.get("/api/cajas").catch(() => ({ data: [] }))
       ]);
       setVentas(ventasRes.data);
       setPropiedades(propsRes.data);
-      const edificiosRes = await axios.get('/api/edificios');
-      setEdificios(edificiosRes.data);
       setClientes(clientesRes.data);
+      setEdificios(edificiosRes.data);
       setCajas(cajasRes.data);
     } finally {
       setLoading(false);
@@ -64,7 +63,6 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
-    }
   };
 
   const handleVenta = async (e) => {
@@ -95,7 +93,6 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
-    }
   };
 
   const handlePago = async (e) => {
@@ -111,7 +108,6 @@ function Ventas() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
-    }
   };
 
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
