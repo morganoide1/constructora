@@ -2,6 +2,7 @@ const express = require('express');
 const Caja = require('../models/Caja');
 const Movimiento = require('../models/Movimiento');
 const { auth, adminOnly } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -50,9 +51,10 @@ router.post('/setup', auth, adminOnly, async (req, res) => {
 });
 
 // Registrar movimiento (ingreso/egreso)
-router.post('/:id/movimiento', auth, adminOnly, async (req, res) => {
+router.post('/:id/movimiento', auth, adminOnly, upload.single('archivo'), async (req, res) => {
   try {
-    const { tipo, monto, concepto, referencia, notas, edificio } = req.body;
+    const { tipo, concepto, referencia, notas, edificio } = req.body;
+    const monto = parseFloat(req.body.monto);
     const caja = await Caja.findById(req.params.id);
     
     if (!caja) {
@@ -82,6 +84,8 @@ router.post('/:id/movimiento', auth, adminOnly, async (req, res) => {
       notas,
       edificio,
       usuario: req.user._id,
+      archivo: req.file ? `/uploads/${req.file.filename}` : undefined,
+      archivoNombre: req.file ? req.file.originalname : undefined,
     });
     await movimiento.save();
 

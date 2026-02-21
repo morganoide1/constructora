@@ -12,7 +12,7 @@ function Cajas() {
   const [showEdificioModal, setShowEdificioModal] = useState(false);
   const [editingEdificio, setEditingEdificio] = useState(null);
   const [selectedCaja, setSelectedCaja] = useState(null);
-  const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
+  const [movForm, setMovForm] = useState({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '', archivo: null });
   const [transForm, setTransForm] = useState({ cajaOrigenId: '', cajaDestinoId: '', monto: '', tipoCambio: '', concepto: '' });
   const [edificioForm, setEdificioForm] = useState({ 
     nombre: '', direccion: '', estado: 'en_construccion', 
@@ -59,16 +59,19 @@ function Cajas() {
   const handleMovimiento = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/cajas/${selectedCaja._id}/movimiento`, {
-        ...movForm,
-        monto: parseFloat(movForm.monto),
-        edificio: movForm.edificio || undefined
-      });
+      const formData = new FormData();
+      formData.append("tipo", movForm.tipo);
+      formData.append("monto", movForm.monto);
+      formData.append("concepto", movForm.concepto);
+      formData.append("notas", movForm.notas || "");
+      if (movForm.edificio) formData.append("edificio", movForm.edificio);
+      if (movForm.archivo) formData.append("archivo", movForm.archivo);
+      await axios.post(`/api/cajas/${selectedCaja._id}/movimiento`, formData, { headers: { "Content-Type": "multipart/form-data" } });
       setShowMovModal(false);
-      setMovForm({ tipo: 'ingreso', monto: '', concepto: '', notas: '', edificio: '' });
+      setMovForm({ tipo: "ingreso", monto: "", concepto: "", notas: "", edificio: "", archivo: null });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error');
+      alert(err.response?.data?.error || "Error");
     }
   };
 
@@ -299,6 +302,10 @@ function Cajas() {
               <div>
                 <label className="block text-sm text-white/70 mb-2">Notas (opcional)</label>
                 <textarea value={movForm.notas} onChange={(e) => setMovForm({...movForm, notas: e.target.value})} className="input-field" rows="2"></textarea>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Adjuntar archivo (opcional)</label>
+                <input type="file" onChange={(e) => setMovForm({...movForm, archivo: e.target.files[0]})} className="input-field" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
               </div>
               <button type="submit" className="w-full btn-primary justify-center">Registrar Movimiento</button>
             </form>
