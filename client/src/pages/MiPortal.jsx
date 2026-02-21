@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload } from 'lucide-react';
 
 function MiPortal() {
   const { user, logout } = useAuth();
@@ -11,6 +11,10 @@ function MiPortal() {
   const [propiedades, setPropiedades] = useState([]);
   const [beneficios, setBeneficios] = useState([]);
   const [edificios, setEdificios] = useState([]);
+  const [gastos, setGastos] = useState([]);
+  const [misPropiedades, setMisPropiedades] = useState([]);
+  const [showGastoModal, setShowGastoModal] = useState(false);
+  const [gastoForm, setGastoForm] = useState({ tipo: "expensas", descripcion: "", monto: "", moneda: "ARS", propiedad: "", archivo: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -22,7 +26,9 @@ function MiPortal() {
         axios.get('/api/clientes/mi-portal/resumen'),
         axios.get('/api/clientes/mi-portal/propiedades'),
         axios.get('/api/beneficios'),
-        axios.get('/api/edificios')
+        axios.get('/api/edificios'),
+        axios.get('/api/gastos/mis-gastos').catch(() => ({ data: [] })),
+        axios.get('/api/gastos/mis-propiedades').catch(() => ({ data: [] }))
       ]);
       setResumen(resumenRes.data);
       setPropiedades(propsRes.data);
@@ -30,6 +36,10 @@ function MiPortal() {
       setBeneficios(beneficiosRes.data);
       const edificiosRes = await axios.get("/api/edificios");
       setEdificios(edificiosRes.data);
+      const gastosRes = await axios.get("/api/gastos/mis-gastos").catch(() => ({ data: [] }));
+      setGastos(gastosRes.data);
+      const misPropRes = await axios.get("/api/gastos/mis-propiedades").catch(() => ({ data: [] }));
+      setMisPropiedades(misPropRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -37,6 +47,34 @@ function MiPortal() {
     }
   };
 
+
+  const handleGasto = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append("tipo", gastoForm.tipo);
+      formData.append("descripcion", gastoForm.descripcion);
+      formData.append("monto", gastoForm.monto);
+      formData.append("moneda", gastoForm.moneda);
+      if (gastoForm.propiedad) formData.append("propiedad", gastoForm.propiedad);
+      if (gastoForm.archivo) formData.append("archivo", gastoForm.archivo);
+      await axios.post("/api/gastos", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      setShowGastoModal(false);
+      setGastoForm({ tipo: "expensas", descripcion: "", monto: "", moneda: "ARS", propiedad: "", archivo: null });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error al registrar gasto");
+    }
+  };
+
+  const handleDeleteGasto = async (id) => {
+    if (confirm("¿Eliminar este gasto?")) {
+      await axios.delete(`/api/gastos/${id}`);
+      fetchData();
+    }
+  };
+
+  const fmtARS = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n || 0);
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -249,7 +287,6 @@ function MiPortal() {
             <p className="text-white/60">Aún no tienes propiedades registradas en el sistema</p>
           </div>
         )}
-      </main>
 
 
         {/* Proyectos de Inversión */}
@@ -306,6 +343,45 @@ function MiPortal() {
             ))}
           </div>
         </div>
+
+        {/* Mis Gastos */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500/20 to-orange-500/20">
+                <Receipt className="w-6 h-6 text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Mis Gastos</h2>
+                <p className="text-white/60 text-sm">Registra tus gastos de expensas y mantenimiento</p>
+              </div>
+            </div>
+            <button onClick={() => setShowGastoModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Agregar Gasto</button>
+          </div>
+          {gastos.length > 0 ? (
+            <div className="space-y-3">
+              {gastos.map((g) => (
+                <div key={g._id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-1 rounded-full text-xs ${g.tipo === "expensas" ? "bg-blue-500/20 text-blue-400" : g.tipo === "mantenimiento" ? "bg-amber-500/20 text-amber-400" : g.tipo === "servicios" ? "bg-purple-500/20 text-purple-400" : "bg-gray-500/20 text-gray-400"}`}>{g.tipo}</span>
+                      <span className="text-white/50 text-sm">{new Date(g.fecha).toLocaleDateString("es-AR")}</span>
+                    </div>
+                    <p className="text-white">{g.descripcion}</p>
+                    {g.propiedad && <p className="text-white/50 text-sm">{g.propiedad.nombre || g.propiedad.codigo}</p>}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className={`text-lg font-bold ${g.moneda === "USD" ? "text-emerald-400" : "text-blue-400"}`}>{g.moneda === "USD" ? fmt(g.monto) : fmtARS(g.monto)}</p>
+                    {g.archivo && <a href={g.archivo} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/10 rounded-lg"><Upload className="w-4 h-4 text-white/60" /></a>}
+                    <button onClick={() => handleDeleteGasto(g._id)} className="p-2 hover:bg-white/10 rounded-lg"><Trash2 className="w-4 h-4 text-rose-400" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-white/50 text-center py-8">No tienes gastos registrados</p>
+          )}
+        </div>
         {/* Beneficios Cliente Wave */}
         <div className="card">
           <div className="flex items-center gap-3 mb-6">
@@ -333,6 +409,59 @@ function MiPortal() {
             <p className="text-white/50 text-center py-8">Próximamente nuevos beneficios</p>
           )}
         </div>
+      </main>
+
+      {/* Modal Agregar Gasto */}
+      {showGastoModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-white/10 p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Agregar Gasto</h3>
+              <button onClick={() => setShowGastoModal(false)} className="p-2 hover:bg-white/10 rounded-lg text-white/60">✕</button>
+            </div>
+            <form onSubmit={handleGasto} className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Tipo de Gasto</label>
+                <select value={gastoForm.tipo} onChange={(e) => setGastoForm({...gastoForm, tipo: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white">
+                  <option value="expensas">Expensas</option>
+                  <option value="mantenimiento">Mantenimiento</option>
+                  <option value="servicios">Servicios</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Propiedad</label>
+                <select value={gastoForm.propiedad} onChange={(e) => setGastoForm({...gastoForm, propiedad: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white">
+                  <option value="">-- Seleccionar --</option>
+                  {misPropiedades.map(p => <option key={p._id} value={p._id}>{p.nombre || p.codigo}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Descripción</label>
+                <input type="text" value={gastoForm.descripcion} onChange={(e) => setGastoForm({...gastoForm, descripcion: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white" placeholder="Ej: Expensas Marzo 2024" required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-white/70 mb-2">Monto</label>
+                  <input type="number" value={gastoForm.monto} onChange={(e) => setGastoForm({...gastoForm, monto: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white" placeholder="0" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-white/70 mb-2">Moneda</label>
+                  <select value={gastoForm.moneda} onChange={(e) => setGastoForm({...gastoForm, moneda: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white">
+                    <option value="ARS">ARS</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Comprobante (opcional)</label>
+                <input type="file" onChange={(e) => setGastoForm({...gastoForm, archivo: e.target.files[0]})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white" accept="image/*,.pdf" />
+              </div>
+              <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold">Registrar Gasto</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
