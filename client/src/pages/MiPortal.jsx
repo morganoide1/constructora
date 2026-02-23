@@ -385,8 +385,8 @@ function MiPortal() {
         {/* Beneficios Cliente Wave */}
         <div className="card">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-              <Gift className="w-6 h-6 text-purple-400" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500/20 to-red-500/20">
+              <Gift className="w-6 h-6 text-rose-400" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Beneficios Cliente Wave</h2>
