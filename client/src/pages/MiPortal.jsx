@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText } from 'lucide-react';
 
 function MiPortal() {
   const { user, logout } = useAuth();
@@ -12,6 +12,7 @@ function MiPortal() {
   const [beneficios, setBeneficios] = useState([]);
   const [edificios, setEdificios] = useState([]);
   const [gastos, setGastos] = useState([]);
+  const [expensas, setExpensas] = useState([]);
   const [misPropiedades, setMisPropiedades] = useState([]);
   const [showGastoModal, setShowGastoModal] = useState(false);
   const [gastoForm, setGastoForm] = useState({ tipo: "expensas", descripcion: "", monto: "", moneda: "ARS", propiedad: "", archivo: null });
@@ -38,6 +39,8 @@ function MiPortal() {
       setEdificios(edificiosRes.data);
       const gastosRes = await axios.get("/api/gastos/mis-gastos").catch(() => ({ data: [] }));
       setGastos(gastosRes.data);
+      const expensasRes = await axios.get("/api/expensas/mis-expensas").catch(() => ({ data: [] }));
+      setExpensas(expensasRes.data);
       const misPropRes = await axios.get("/api/gastos/mis-propiedades").catch(() => ({ data: [] }));
       setMisPropiedades(misPropRes.data);
     } catch (err) {
@@ -344,6 +347,41 @@ function MiPortal() {
           </div>
         </div>
 
+
+        {/* Mis Expensas */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20">
+              <FileText className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Mis Expensas</h2>
+              <p className="text-white/60 text-sm">Historial de expensas de tus propiedades</p>
+            </div>
+          </div>
+          {expensas.length > 0 ? (
+            <div className="space-y-3">
+              {expensas.map((exp) => (
+                <div key={exp._id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-white font-medium">{exp.propiedad?.nombre || exp.propiedad?.codigo}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${exp.estado === "pagada" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>{exp.estado}</span>
+                    </div>
+                    <p className="text-white/60 text-sm">Período: {exp.periodo.mes}/{exp.periodo.año}</p>
+                    {exp.fechaVencimiento && <p className="text-white/50 text-xs">Vence: {new Date(exp.fechaVencimiento).toLocaleDateString("es-AR")}</p>}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="text-lg font-bold text-amber-400">{exp.moneda === "USD" ? fmt(exp.montoTotal) : fmtARS(exp.montoTotal)}</p>
+                    {exp.archivo && <a href={exp.archivo} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/10 rounded-lg"><FileText className="w-4 h-4 text-white/60" /></a>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-white/50 text-center py-8">No tienes expensas registradas</p>
+          )}
+        </div>
         {/* Mis Gastos */}
         <div className="card">
           <div className="flex items-center justify-between mb-6">

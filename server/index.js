@@ -14,6 +14,8 @@ const edificiosRoutes = require('./routes/edificios');
 const pylRoutes = require('./routes/pyl');
 const beneficiosRoutes = require('./routes/beneficios');
 const gastosRoutes = require('./routes/gastos');
+const presupuestosRoutes = require('./routes/presupuestos');
+const expensasRoutes = require('./routes/expensas');
 
 const app = express();
 
@@ -51,6 +53,8 @@ app.use('/api/edificios', edificiosRoutes);
 app.use('/api/pyl', pylRoutes);
 app.use('/api/beneficios', beneficiosRoutes);
 app.use('/api/gastos', gastosRoutes);
+app.use('/api/presupuestos', presupuestosRoutes);
+app.use('/api/expensas', expensasRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Ruta para servir la aplicación React

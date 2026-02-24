@@ -21,6 +21,7 @@ const navItems = [
   { path: '/certificados', icon: FileText, label: 'Certificados' },
   { path: '/pyl', icon: TrendingUp, label: 'P&L' },
   { path: '/beneficios', icon: Gift, label: 'Beneficios' },
+  { path: '/expensas', icon: FileText, label: 'Expensas' },
 ];
 
 function Layout() {
