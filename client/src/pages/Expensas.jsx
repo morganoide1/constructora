@@ -20,7 +20,7 @@ function Expensas() {
       setLoading(true);
       const [expRes, propRes] = await Promise.all([
         axios.get('/api/expensas'),
-        axios.get('/api/ventas/propiedades?estado=vendido')
+        axios.get('/api/ventas/propiedades')
       ]);
       setExpensas(expRes.data);
       setPropiedades(propRes.data);
