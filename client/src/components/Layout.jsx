@@ -47,20 +47,20 @@ function Layout() {
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-72 glass border-r border-white/10
+        w-72 glass border-r border-green-200
         transform transition-transform duration-300 ease-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-white/10">
+          <div className="p-6 border-b border-green-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
+                <Building2 className="w-6 h-6 text-gray-800" />
               </div>
               <div>
-                <h1 className="font-display font-bold text-lg text-white">Constructora</h1>
-                <p className="text-xs text-white/50">Sistema ERP</p>
+                <h1 className="font-display font-bold text-lg text-gray-800">Constructora</h1>
+                <p className="text-xs text-gray-800/50">Sistema ERP</p>
               </div>
             </div>
           </div>
@@ -77,7 +77,7 @@ function Layout() {
                   flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                   ${isActive 
                     ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    : 'text-gray-800/70 hover:bg-green-50 hover:text-gray-800'
                   }
                 `}
               >
@@ -89,18 +89,18 @@ function Layout() {
           </nav>
 
           {/* Usuario */}
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-green-200">
             <div className="flex items-center gap-3 px-4 py-3 glass rounded-xl">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-gray-800 font-bold">
                 {user?.nombre?.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.nombre}</p>
-                <p className="text-xs text-white/50 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium text-gray-800 truncate">{user?.nombre}</p>
+                <p className="text-xs text-gray-800/50 capitalize">{user?.role}</p>
               </div>
               <button 
                 onClick={handleLogout}
-                className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                className="p-2 rounded-lg hover:bg-green-100 text-gray-800/60 hover:text-gray-800 transition-colors"
                 title="Cerrar sesión"
               >
                 <LogOut className="w-5 h-5" />
@@ -113,15 +113,15 @@ function Layout() {
       {/* Contenido principal */}
       <main className="flex-1 min-h-screen">
         {/* Header móvil */}
-        <header className="lg:hidden glass border-b border-white/10 p-4 sticky top-0 z-30">
+        <header className="lg:hidden glass border-b border-green-200 p-4 sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg hover:bg-green-100 transition-colors"
             >
-              <Menu className="w-6 h-6 text-white" />
+              <Menu className="w-6 h-6 text-gray-800" />
             </button>
-            <h1 className="font-display font-bold text-lg text-white">Constructora ERP</h1>
+            <h1 className="font-display font-bold text-lg text-gray-800">Constructora ERP</h1>
           </div>
         </header>
 
