@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,9 @@ function MiPortal() {
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  
+  const proyectosRef = useRef(null);
+  const beneficiosRef = useRef(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -38,6 +41,13 @@ function MiPortal() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const scroll = (ref, direction) => {
+    if (ref.current) {
+      const scrollAmount = 320;
+      ref.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
     }
   };
 
@@ -68,13 +78,9 @@ function MiPortal() {
   };
 
   const fmtARS = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
@@ -84,7 +90,6 @@ function MiPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      {/* Header */}
       <header className="bg-white border-b border-green-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -101,15 +106,12 @@ function MiPortal() {
               <p className="font-medium text-gray-800">{user?.nombre}</p>
               <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
-            <button onClick={handleLogout} className="p-2 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" />
-            </button>
+            <button onClick={handleLogout} className="p-2 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-600"><LogOut className="w-5 h-5" /></button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Mis Propiedades */}
         {propiedades.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -119,107 +121,40 @@ function MiPortal() {
               </div>
               <div className="flex items-center gap-4">
                 <span className={`badge ${p.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{p.estado}</span>
-                {p.propiedad?.edificio?.driveUrl && (
-                  <a href={p.propiedad.edificio.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm">
-                    <FolderOpen className="w-4 h-4" /> Planos e imágenes
-                  </a>
-                )}
-                {p.propiedad.valorFuturo && (
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Valor futuro</p>
-                    <p className="text-lg font-bold text-blue-600">{fmt(p.propiedad.valorFuturo)}</p>
-                  </div>
-                )}
+                {p.propiedad?.edificio?.driveUrl && <a href={p.propiedad.edificio.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm"><FolderOpen className="w-4 h-4" /> Planos</a>}
               </div>
             </div>
-
-            {/* Info del Edificio */}
             {p.propiedad?.edificio && (
               <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 className="w-5 h-5 text-green-600" />
                   <h4 className="font-semibold text-gray-800">{p.propiedad.edificio.nombre}</h4>
-                  {p.propiedad.edificio.estado && (
-                    <span className={`px-2 py-1 rounded-full text-xs ${p.propiedad.edificio.estado === 'en_construccion' ? 'bg-amber-100 text-amber-700' : p.propiedad.edificio.estado === 'finalizado' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{p.propiedad.edificio.estado.replace('_', ' ')}</span>
-                  )}
                 </div>
-                {p.propiedad.edificio.direccion && <p className="text-gray-500 text-sm mb-3">{p.propiedad.edificio.direccion}</p>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                  {p.propiedad.edificio.avanceObra > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-xl font-bold text-purple-600">{p.propiedad.edificio.avanceObra}%</p>
-                      <p className="text-xs text-gray-500">Avance obra</p>
-                    </div>
-                  )}
-                  {p.propiedad.edificio.porcentajeVendido > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-xl font-bold text-emerald-600">{p.propiedad.edificio.porcentajeVendido}%</p>
-                      <p className="text-xs text-gray-500">Vendido</p>
-                    </div>
-                  )}
-                  {p.propiedad.edificio.rentabilidadPozo > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-xl font-bold text-blue-600">{p.propiedad.edificio.rentabilidadPozo}%</p>
-                      <p className="text-xs text-gray-500">Rentabilidad media</p>
-                    </div>
-                  )}
-                  {p.propiedad.edificio.fechaEntregaEstimada && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-sm font-bold text-gray-800">{new Date(p.propiedad.edificio.fechaEntregaEstimada).toLocaleDateString('es-AR', { month: 'short', year: 'numeric' })}</p>
-                      <p className="text-xs text-gray-500">Entrega est.</p>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {p.propiedad.edificio.historialObraUrl && (
-                    <a href={p.propiedad.edificio.historialObraUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-green-600 text-sm hover:underline">
-                      <ExternalLink className="w-4 h-4" /> Ver historial de obra
-                    </a>
-                  )}
-                  {p.propiedad.edificio.expensasUrl && (
-                    <a href={p.propiedad.edificio.expensasUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-emerald-600 text-sm hover:underline ml-4">
-                      <ExternalLink className="w-4 h-4" /> Ver expensas
-                    </a>
-                  )}
+                  {p.propiedad.edificio.avanceObra > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-purple-600">{p.propiedad.edificio.avanceObra}%</p><p className="text-xs text-gray-500">Avance</p></div>}
+                  {p.propiedad.edificio.porcentajeVendido > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-emerald-600">{p.propiedad.edificio.porcentajeVendido}%</p><p className="text-xs text-gray-500">Vendido</p></div>}
                 </div>
               </div>
             )}
-
-            {/* Progreso de pago */}
             <div className="mb-6">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-gray-500">Progreso de pago</span>
                 <span className="text-gray-800 font-medium">{p.resumen.porcentajePagado}%</span>
               </div>
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${p.resumen.porcentajePagado}%` }} />
+                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style={{ width: `${p.resumen.porcentajePagado}%` }} />
               </div>
-              <div className="flex items-center justify-between mt-2 text-sm">
+              <div className="flex justify-between mt-2 text-sm">
                 <span className="text-emerald-600">Pagado: {fmt(p.totalPagado)}</span>
                 <span className="text-amber-600">Pendiente: {fmt(p.saldoPendiente)}</span>
               </div>
             </div>
-
-            {/* Próxima cuota */}
-            {p.resumen.proximaCuota && (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 mb-6">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-500" />
-                  <div>
-                    <p className="font-medium text-gray-800">Próximo vencimiento: Cuota {p.resumen.proximaCuota.numero}</p>
-                    <p className="text-sm text-gray-500">{new Date(p.resumen.proximaCuota.fechaVencimiento).toLocaleDateString()} - {fmt(p.resumen.proximaCuota.monto)}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Cuotas */}
             <div>
               <h4 className="font-medium text-gray-800 mb-3">Detalle de cuotas</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {p.cuotas.map((c) => (
                   <div key={c.numero} className={`p-3 rounded-lg text-center ${c.estado === 'pagada' ? 'bg-emerald-50 border border-emerald-200' : c.estado === 'vencida' ? 'bg-rose-50 border border-rose-200' : 'bg-gray-50 border border-gray-200'}`}>
-                    <div className="flex items-center justify-center mb-1">
+                    <div className="flex justify-center mb-1">
                       {c.estado === 'pagada' ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : c.estado === 'vencida' ? <AlertCircle className="w-4 h-4 text-rose-500" /> : <Clock className="w-4 h-4 text-gray-400" />}
                     </div>
                     <p className="text-xs text-gray-500">Cuota {c.numero}</p>
@@ -235,179 +170,127 @@ function MiPortal() {
           <div className="bg-white rounded-2xl p-12 shadow-lg border border-green-100 text-center">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Sin propiedades asignadas</h3>
-            <p className="text-gray-500">Aún no tienes propiedades registradas en el sistema</p>
           </div>
         )}
 
-        {/* Proyectos de Inversión */}
+        {/* Proyectos - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-100 to-emerald-100">
-              <Briefcase className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-100"><Briefcase className="w-6 h-6 text-blue-600" /></div>
+              <div><h2 className="text-xl font-bold text-gray-800">Proyectos de Inversión</h2></div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">Proyectos de Inversión</h2>
-              <p className="text-gray-500 text-sm">Conoce todos nuestros desarrollos</p>
-            </div>
+            {edificios.length > 2 && (
+              <div className="flex gap-2">
+                <button onClick={() => scroll(proyectosRef, 'left')} className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-700"><ChevronLeft className="w-5 h-5" /></button>
+                <button onClick={() => scroll(proyectosRef, 'right')} className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-700"><ChevronRight className="w-5 h-5" /></button>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div ref={proyectosRef} className="flex gap-4 overflow-x-auto pb-4 snap-x" style={{ scrollbarWidth: 'none' }}>
             {edificios.map((ed) => (
-              <div key={ed._id} className="p-4 bg-green-50 rounded-xl border border-green-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-800 text-lg">{ed.nombre}</h4>
-                  <span className={`px-2 py-1 rounded-full text-xs ${ed.estado === 'en_construccion' ? 'bg-amber-100 text-amber-700' : ed.estado === 'finalizado' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{ed.estado.replace('_', ' ')}</span>
-                </div>
+              <div key={ed._id} className="flex-shrink-0 w-80 p-4 bg-green-50 rounded-xl border border-green-200 snap-start">
+                <h4 className="font-semibold text-gray-800 text-lg mb-2">{ed.nombre}</h4>
                 {ed.direccion && <p className="text-gray-500 text-sm mb-3">{ed.direccion}</p>}
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  {ed.avanceObra > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600">{ed.avanceObra}%</p>
-                      <p className="text-xs text-gray-500">Avance obra</p>
-                    </div>
-                  )}
-                  {ed.porcentajeVendido > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-2xl font-bold text-emerald-600">{ed.porcentajeVendido}%</p>
-                      <p className="text-xs text-gray-500">Vendido</p>
-                    </div>
-                  )}
-                  {ed.rentabilidadPozo > 0 && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{ed.rentabilidadPozo}%</p>
-                      <p className="text-xs text-gray-500">Rentabilidad media inversor pozo</p>
-                    </div>
-                  )}
-                  {ed.fechaEntregaEstimada && (
-                    <div className="text-center p-2 bg-white rounded-lg">
-                      <p className="text-sm font-bold text-gray-800">{new Date(ed.fechaEntregaEstimada).toLocaleDateString('es-AR', { month: 'short', year: 'numeric' })}</p>
-                      <p className="text-xs text-gray-500">Entrega est.</p>
-                    </div>
-                  )}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {ed.avanceObra > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-purple-600">{ed.avanceObra}%</p><p className="text-xs text-gray-500">Avance</p></div>}
+                  {ed.porcentajeVendido > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-emerald-600">{ed.porcentajeVendido}%</p><p className="text-xs text-gray-500">Vendido</p></div>}
                 </div>
-                <div className="flex gap-2">
-                  {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Imágenes y planos</a>}
-                  {ed.historialObraUrl && <a href={ed.historialObraUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Historial</a>}
-                  {ed.expensasUrl && <a href={ed.expensasUrl} target="_blank" rel="noopener noreferrer" className="flex-1 btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Expensas</a>}
+                <div className="flex flex-col gap-2">
+                  {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mis Expensas */}
+        {/* Expensas */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-100 to-yellow-100">
-              <FileText className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">Mis Expensas</h2>
-              <p className="text-gray-500 text-sm">Historial de expensas de tus propiedades</p>
-            </div>
+            <div className="p-3 rounded-xl bg-amber-100"><FileText className="w-6 h-6 text-amber-600" /></div>
+            <h2 className="text-xl font-bold text-gray-800">Mis Expensas</h2>
           </div>
           {expensas.length > 0 ? (
             <div className="space-y-3">
               {expensas.map((exp) => (
                 <div key={exp._id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-gray-800 font-medium">{exp.propiedad?.nombre || exp.propiedad?.codigo}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${exp.estado === 'pagada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{exp.estado}</span>
-                    </div>
-                    <p className="text-gray-500 text-sm">Período: {exp.periodo.mes}/{exp.periodo.año}</p>
-                    {exp.fechaVencimiento && <p className="text-gray-400 text-xs">Vence: {new Date(exp.fechaVencimiento).toLocaleDateString('es-AR')}</p>}
+                  <div>
+                    <span className="text-gray-800 font-medium">{exp.propiedad?.nombre}</span>
+                    <p className="text-gray-500 text-sm">{exp.periodo.mes}/{exp.periodo.año}</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <p className="text-lg font-bold text-amber-600">{exp.moneda === 'USD' ? fmt(exp.montoTotal) : fmtARS(exp.montoTotal)}</p>
-                    {exp.archivo && <a href={exp.archivo} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white rounded-lg"><FileText className="w-4 h-4 text-gray-500" /></a>}
-                  </div>
+                  <p className="text-lg font-bold text-amber-600">{fmtARS(exp.montoTotal)}</p>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-400 text-center py-8">No tienes expensas registradas</p>
-          )}
+          ) : <p className="text-gray-400 text-center py-8">No tienes expensas</p>}
         </div>
 
-        {/* Mis Gastos */}
+        {/* Gastos */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-rose-100 to-orange-100">
-                <Receipt className="w-6 h-6 text-rose-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Mis Gastos</h2>
-                <p className="text-gray-500 text-sm">Registra tus gastos de expensas y mantenimiento</p>
-              </div>
+              <div className="p-3 rounded-xl bg-rose-100"><Receipt className="w-6 h-6 text-rose-600" /></div>
+              <h2 className="text-xl font-bold text-gray-800">Mis Gastos</h2>
             </div>
-            <button onClick={() => setShowGastoModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Agregar Gasto</button>
+            <button onClick={() => setShowGastoModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Agregar</button>
           </div>
           {gastos.length > 0 ? (
             <div className="space-y-3">
               {gastos.map((g) => (
                 <div key={g._id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-1 rounded-full text-xs ${g.tipo === 'expensas' ? 'bg-blue-100 text-blue-700' : g.tipo === 'mantenimiento' ? 'bg-amber-100 text-amber-700' : g.tipo === 'servicios' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>{g.tipo}</span>
-                      <span className="text-gray-400 text-sm">{new Date(g.fecha).toLocaleDateString('es-AR')}</span>
-                    </div>
-                    <p className="text-gray-800">{g.descripcion}</p>
-                    {g.propiedad && <p className="text-gray-400 text-sm">{g.propiedad.nombre || g.propiedad.codigo}</p>}
+                  <div>
+                    <span className={`px-2 py-1 rounded-full text-xs ${g.tipo === 'expensas' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{g.tipo}</span>
+                    <p className="text-gray-800 mt-1">{g.descripcion}</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <p className={`text-lg font-bold ${g.moneda === 'USD' ? 'text-emerald-600' : 'text-blue-600'}`}>{g.moneda === 'USD' ? fmt(g.monto) : fmtARS(g.monto)}</p>
-                    {g.archivo && <a href={g.archivo} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white rounded-lg"><Upload className="w-4 h-4 text-gray-500" /></a>}
+                  <div className="flex items-center gap-3">
+                    <p className="text-lg font-bold text-blue-600">{g.moneda === 'USD' ? fmt(g.monto) : fmtARS(g.monto)}</p>
                     <button onClick={() => handleDeleteGasto(g._id)} className="p-2 hover:bg-white rounded-lg"><Trash2 className="w-4 h-4 text-rose-500" /></button>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-400 text-center py-8">No tienes gastos registrados</p>
-          )}
+          ) : <p className="text-gray-400 text-center py-8">No tienes gastos</p>}
         </div>
 
-        {/* Beneficios Cliente Wave */}
+        {/* Beneficios - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-rose-100 to-red-100">
-              <Gift className="w-6 h-6 text-rose-600" />
-            </div>
-            <div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-rose-100"><Gift className="w-6 h-6 text-rose-600" /></div>
               <h2 className="text-xl font-bold text-gray-800">Beneficios Cliente Wave</h2>
-              <p className="text-gray-500 text-sm">Descuentos y beneficios exclusivos para ti</p>
             </div>
+            {beneficios.length > 3 && (
+              <div className="flex gap-2">
+                <button onClick={() => scroll(beneficiosRef, 'left')} className="p-2 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700"><ChevronLeft className="w-5 h-5" /></button>
+                <button onClick={() => scroll(beneficiosRef, 'right')} className="p-2 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700"><ChevronRight className="w-5 h-5" /></button>
+              </div>
+            )}
           </div>
           {beneficios.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div ref={beneficiosRef} className="flex gap-4 overflow-x-auto pb-4 snap-x" style={{ scrollbarWidth: 'none' }}>
               {beneficios.map((b) => (
-                <div key={b._id} className="p-4 bg-rose-50 rounded-xl border border-rose-200 hover:shadow-md transition-all">
+                <div key={b._id} className="flex-shrink-0 w-72 p-4 bg-rose-50 rounded-xl border border-rose-200 snap-start">
                   {b.imagen && <img src={b.imagen} alt={b.titulo} className="w-full h-32 object-cover rounded-lg mb-3" />}
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs mb-2 ${b.categoria === 'descuento' ? 'bg-emerald-100 text-emerald-700' : b.categoria === 'servicio' ? 'bg-blue-100 text-blue-700' : b.categoria === 'experiencia' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>{b.categoria}</span>
                   <h4 className="font-semibold text-gray-800 mb-1">{b.titulo}</h4>
                   <p className="text-gray-500 text-sm mb-3">{b.descripcion}</p>
                   {b.link && <a href={b.link} target="_blank" rel="noopener noreferrer" className="text-rose-600 text-sm hover:underline">Ver más →</a>}
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-400 text-center py-8">Próximamente nuevos beneficios</p>
-          )}
+          ) : <p className="text-gray-400 text-center py-8">Próximamente</p>}
         </div>
       </main>
 
-      {/* Modal Agregar Gasto */}
       {showGastoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800">Agregar Gasto</h3>
-              <button onClick={() => setShowGastoModal(false)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">✕</button>
+              <button onClick={() => setShowGastoModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
             </div>
             <form onSubmit={handleGasto} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-2">Tipo de Gasto</label>
+                <label className="block text-sm text-gray-600 mb-2">Tipo</label>
                 <select value={gastoForm.tipo} onChange={(e) => setGastoForm({...gastoForm, tipo: e.target.value})} className="input-field">
                   <option value="expensas">Expensas</option>
                   <option value="mantenimiento">Mantenimiento</option>
@@ -424,12 +307,12 @@ function MiPortal() {
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-2">Descripción</label>
-                <input type="text" value={gastoForm.descripcion} onChange={(e) => setGastoForm({...gastoForm, descripcion: e.target.value})} className="input-field" placeholder="Ej: Expensas Marzo 2024" required />
+                <input type="text" value={gastoForm.descripcion} onChange={(e) => setGastoForm({...gastoForm, descripcion: e.target.value})} className="input-field" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">Monto</label>
-                  <input type="number" value={gastoForm.monto} onChange={(e) => setGastoForm({...gastoForm, monto: e.target.value})} className="input-field" placeholder="0" required />
+                  <input type="number" value={gastoForm.monto} onChange={(e) => setGastoForm({...gastoForm, monto: e.target.value})} className="input-field" required />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">Moneda</label>
@@ -440,10 +323,10 @@ function MiPortal() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-2">Comprobante (opcional)</label>
+                <label className="block text-sm text-gray-600 mb-2">Comprobante</label>
                 <input type="file" onChange={(e) => setGastoForm({...gastoForm, archivo: e.target.files[0]})} className="input-field" accept="image/*,.pdf" />
               </div>
-              <button type="submit" className="w-full btn-primary justify-center">Registrar Gasto</button>
+              <button type="submit" className="w-full btn-primary justify-center">Registrar</button>
             </form>
           </div>
         </div>
