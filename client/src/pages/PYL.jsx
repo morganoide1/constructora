@@ -1,38 +1,24 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TrendingUp, TrendingDown, Building2, DollarSign, Banknote, Filter } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Building2 } from 'lucide-react';
 
 function PYL() {
-  const [edificios, setEdificios] = useState([]);
-  const [selectedEdificio, setSelectedEdificio] = useState('todos');
   const [data, setData] = useState(null);
+  const [edificios, setEdificios] = useState([]);
+  const [selectedEdificio, setSelectedEdificio] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchEdificios();
-  }, []);
+  useEffect(() => { fetchData(); }, [selectedEdificio]);
 
-  useEffect(() => {
-    fetchPYL();
-  }, [selectedEdificio]);
-
-  const fetchEdificios = async () => {
-    try {
-      const res = await axios.get('/api/edificios');
-      setEdificios(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchPYL = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const url = selectedEdificio === 'todos' 
-        ? '/api/pyl' 
-        : `/api/pyl?edificio=${selectedEdificio}`;
-      const res = await axios.get(url);
-      setData(res.data);
+      const [pylRes, edRes] = await Promise.all([
+        axios.get(`/api/pyl${selectedEdificio ? `?edificio=${selectedEdificio}` : ''}`),
+        axios.get('/api/edificios')
+      ]);
+      setData(pylRes.data);
+      setEdificios(edRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,117 +26,105 @@ function PYL() {
     }
   };
 
-  const fmt = (n, currency = 'USD') => new Intl.NumberFormat('es-AR', { 
-    style: 'currency', 
-    currency, 
-    maximumFractionDigits: 0 
-  }).format(n || 0);
+  const fmt = (n, currency = 'USD') => new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n || 0);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-white">P&L - Estado de Resultados</h1>
-          <p className="text-white/60 mt-1">Análisis de ingresos y egresos por edificio</p>
+          <h1 className="text-3xl font-display font-bold text-gray-800">P&L - Estado de Resultados</h1>
+          <p className="text-gray-500 mt-1">Análisis de ingresos y egresos por edificio</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-white/60" />
-          <select 
-            value={selectedEdificio} 
-            onChange={(e) => setSelectedEdificio(e.target.value)}
-            className="input-field min-w-[200px]"
-          >
-            <option value="todos">Todos los edificios</option>
-            {edificios.map(e => (
-              <option key={e._id} value={e._id}>{e.nombre}</option>
-            ))}
-          </select>
-        </div>
+        <select value={selectedEdificio} onChange={(e) => setSelectedEdificio(e.target.value)} className="input-field w-auto">
+          <option value="">Todos los edificios</option>
+          {edificios.map(e => <option key={e._id} value={e._id}>{e.nombre}</option>)}
+        </select>
       </div>
 
-      {/* Resumen General */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-            </div>
-            <span className="text-white/60">Ingresos USD</span>
+      {/* Resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-emerald-100"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
+            <span className="text-gray-500 text-sm">Ingresos USD</span>
           </div>
-          <p className="text-2xl font-bold text-emerald-400">{fmt(data?.ingresos?.USD, 'USD')}</p>
+          <p className="text-2xl font-bold text-emerald-600">{fmt(data?.totales?.ingresos?.USD)}</p>
         </div>
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-            </div>
-            <span className="text-white/60">Ingresos ARS</span>
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-blue-100"><TrendingUp className="w-5 h-5 text-blue-600" /></div>
+            <span className="text-gray-500 text-sm">Ingresos ARS</span>
           </div>
-          <p className="text-2xl font-bold text-blue-400">{fmt(data?.ingresos?.ARS, 'ARS')}</p>
+          <p className="text-2xl font-bold text-blue-600">{fmt(data?.totales?.ingresos?.ARS, 'ARS')}</p>
         </div>
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-rose-500/20 rounded-lg">
-              <TrendingDown className="w-5 h-5 text-rose-400" />
-            </div>
-            <span className="text-white/60">Egresos USD</span>
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-rose-100"><TrendingDown className="w-5 h-5 text-rose-600" /></div>
+            <span className="text-gray-500 text-sm">Egresos USD</span>
           </div>
-          <p className="text-2xl font-bold text-rose-400">{fmt(data?.egresos?.USD, 'USD')}</p>
+          <p className="text-2xl font-bold text-rose-600">{fmt(data?.totales?.egresos?.USD)}</p>
         </div>
-        <div className="card">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
-              <TrendingDown className="w-5 h-5 text-orange-400" />
-            </div>
-            <span className="text-white/60">Egresos ARS</span>
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-amber-100"><TrendingDown className="w-5 h-5 text-amber-600" /></div>
+            <span className="text-gray-500 text-sm">Egresos ARS</span>
           </div>
-          <p className="text-2xl font-bold text-orange-400">{fmt(data?.egresos?.ARS, 'ARS')}</p>
+          <p className="text-2xl font-bold text-amber-600">{fmt(data?.totales?.egresos?.ARS, 'ARS')}</p>
         </div>
       </div>
 
       {/* Resultado Neto */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card border-2 border-emerald-500/30">
-          <h3 className="text-lg font-semibold text-white mb-4">Resultado Neto USD</h3>
-          <p className={`text-3xl font-bold ${(data?.resultado?.USD || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-            {fmt(data?.resultado?.USD, 'USD')}
-          </p>
-        </div>
-        <div className="card border-2 border-blue-500/30">
-          <h3 className="text-lg font-semibold text-white mb-4">Resultado Neto ARS</h3>
-          <p className={`text-3xl font-bold ${(data?.resultado?.ARS || 0) >= 0 ? 'text-blue-400' : 'text-rose-400'}`}>
-            {fmt(data?.resultado?.ARS, 'ARS')}
-          </p>
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Resultado Neto</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="text-center p-4 bg-gray-50 rounded-xl">
+            <p className="text-gray-500 mb-2">USD</p>
+            <p className={`text-3xl font-bold ${(data?.totales?.ingresos?.USD - data?.totales?.egresos?.USD) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {fmt((data?.totales?.ingresos?.USD || 0) - (data?.totales?.egresos?.USD || 0))}
+            </p>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-xl">
+            <p className="text-gray-500 mb-2">ARS</p>
+            <p className={`text-3xl font-bold ${(data?.totales?.ingresos?.ARS - data?.totales?.egresos?.ARS) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {fmt((data?.totales?.ingresos?.ARS || 0) - (data?.totales?.egresos?.ARS || 0), 'ARS')}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Detalle por Concepto */}
-      {data?.detalleEgresos?.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Detalle de Egresos por Concepto</h3>
+      {/* Detalle por Edificio */}
+      {data?.porEdificio && data.porEdificio.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalle por Edificio</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 text-white/60 font-medium">Concepto</th>
-                  <th className="text-right py-3 text-white/60 font-medium">USD</th>
-                  <th className="text-right py-3 text-white/60 font-medium">ARS</th>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 text-gray-500 font-medium">Edificio</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Ingresos USD</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Egresos USD</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Resultado USD</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Ingresos ARS</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Egresos ARS</th>
+                  <th className="text-right py-3 text-gray-500 font-medium">Resultado ARS</th>
                 </tr>
               </thead>
               <tbody>
-                {data.detalleEgresos.map((item, idx) => (
-                  <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 text-white">{item.concepto}</td>
-                    <td className="py-3 text-right text-rose-400">{fmt(item.USD, 'USD')}</td>
-                    <td className="py-3 text-right text-orange-400">{fmt(item.ARS, 'ARS')}</td>
+                {data.porEdificio.map((ed, i) => (
+                  <tr key={i} className="border-b border-gray-100 hover:bg-green-50">
+                    <td className="py-3 text-gray-800 font-medium">{ed.edificio || 'Sin asignar'}</td>
+                    <td className="py-3 text-right text-emerald-600">{fmt(ed.ingresos?.USD)}</td>
+                    <td className="py-3 text-right text-rose-600">{fmt(ed.egresos?.USD)}</td>
+                    <td className={`py-3 text-right font-medium ${(ed.ingresos?.USD - ed.egresos?.USD) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {fmt((ed.ingresos?.USD || 0) - (ed.egresos?.USD || 0))}
+                    </td>
+                    <td className="py-3 text-right text-blue-600">{fmt(ed.ingresos?.ARS, 'ARS')}</td>
+                    <td className="py-3 text-right text-amber-600">{fmt(ed.egresos?.ARS, 'ARS')}</td>
+                    <td className={`py-3 text-right font-medium ${(ed.ingresos?.ARS - ed.egresos?.ARS) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {fmt((ed.ingresos?.ARS || 0) - (ed.egresos?.ARS || 0), 'ARS')}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -159,41 +133,20 @@ function PYL() {
         </div>
       )}
 
-      {/* P&L por Edificio */}
-      {selectedEdificio === 'todos' && data?.porEdificio?.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">P&L por Edificio</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 text-white/60 font-medium">Edificio</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Ingresos USD</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Egresos USD</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Resultado USD</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Ingresos ARS</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Egresos ARS</th>
-                  <th className="text-right py-3 text-white/60 font-medium">Resultado ARS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.porEdificio.map((ed, idx) => (
-                  <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 text-white font-medium">{ed.nombre}</td>
-                    <td className="py-3 text-right text-emerald-400">{fmt(ed.ingresos?.USD, 'USD')}</td>
-                    <td className="py-3 text-right text-rose-400">{fmt(ed.egresos?.USD, 'USD')}</td>
-                    <td className={`py-3 text-right font-bold ${(ed.resultado?.USD || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {fmt(ed.resultado?.USD, 'USD')}
-                    </td>
-                    <td className="py-3 text-right text-blue-400">{fmt(ed.ingresos?.ARS, 'ARS')}</td>
-                    <td className="py-3 text-right text-orange-400">{fmt(ed.egresos?.ARS, 'ARS')}</td>
-                    <td className={`py-3 text-right font-bold ${(ed.resultado?.ARS || 0) >= 0 ? 'text-blue-400' : 'text-rose-400'}`}>
-                      {fmt(ed.resultado?.ARS, 'ARS')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Detalle por Concepto */}
+      {data?.porConcepto && Object.keys(data.porConcepto).length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Egresos por Concepto</h3>
+          <div className="space-y-3">
+            {Object.entries(data.porConcepto).map(([concepto, valores]) => (
+              <div key={concepto} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">{concepto}</span>
+                <div className="flex gap-4">
+                  {valores.USD > 0 && <span className="text-rose-600 font-medium">{fmt(valores.USD)}</span>}
+                  {valores.ARS > 0 && <span className="text-amber-600 font-medium">{fmt(valores.ARS, 'ARS')}</span>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
