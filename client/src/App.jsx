@@ -11,6 +11,7 @@ import Certificados from './pages/Certificados';
 import PYL from './pages/PYL';
 import Beneficios from './pages/Beneficios';
 import Expensas from './pages/Expensas';
+import Denuncias from './pages/Denuncias';
 import MiPortal from './pages/MiPortal';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -70,6 +71,7 @@ function App() {
         <Route path="pyl" element={<PYL />} />
         <Route path="beneficios" element={<Beneficios />} />
         <Route path="expensas" element={<Expensas />} />
+        <Route path="denuncias" element={<Denuncias />} />
       </Route>
 
       {/* Portal Cliente */}

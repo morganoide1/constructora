@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,9 @@ function MiPortal() {
   const [expensas, setExpensas] = useState([]);
   const [misPropiedades, setMisPropiedades] = useState([]);
   const [showGastoModal, setShowGastoModal] = useState(false);
+  const [showDenunciaModal, setShowDenunciaModal] = useState(false);
+  const [denuncias, setDenuncias] = useState([]);
+  const [denunciaForm, setDenunciaForm] = useState({ tipo: "reclamo", asunto: "", descripcion: "", propiedad: "", archivo: null });
   const [gastoForm, setGastoForm] = useState({ tipo: 'expensas', descripcion: '', monto: '', moneda: 'ARS', propiedad: '', archivo: null });
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
@@ -37,6 +40,8 @@ function MiPortal() {
       setMisPropiedades(misPropRes.data);
       const expensasRes = await axios.get('/api/expensas/mis-expensas').catch(() => ({ data: [] }));
       setExpensas(expensasRes.data);
+      const denunciasRes = await axios.get("/api/denuncias/mis-denuncias").catch(() => ({ data: [] }));
+      setDenuncias(denunciasRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -77,6 +82,24 @@ function MiPortal() {
     }
   };
 
+
+  const handleDenuncia = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append("tipo", denunciaForm.tipo);
+      formData.append("asunto", denunciaForm.asunto);
+      formData.append("descripcion", denunciaForm.descripcion);
+      if (denunciaForm.propiedad) formData.append("propiedad", denunciaForm.propiedad);
+      if (denunciaForm.archivo) formData.append("archivo", denunciaForm.archivo);
+      await axios.post("/api/denuncias", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      setShowDenunciaModal(false);
+      setDenunciaForm({ tipo: "reclamo", asunto: "", descripcion: "", propiedad: "", archivo: null });
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error al crear denuncia");
+    }
+  };
   const fmtARS = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -252,6 +275,40 @@ function MiPortal() {
           ) : <p className="text-gray-400 text-center py-8">No tienes gastos</p>}
         </div>
 
+
+        {/* Mis Denuncias */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-amber-100"><AlertTriangle className="w-6 h-6 text-amber-600" /></div>
+              <h2 className="text-xl font-bold text-gray-800">Mis Denuncias</h2>
+            </div>
+            <button onClick={() => setShowDenunciaModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Nueva</button>
+          </div>
+          {denuncias.length > 0 ? (
+            <div className="space-y-3">
+              {denuncias.map((d) => (
+                <div key={d._id} className="p-4 bg-green-50 rounded-xl border border-green-200">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <span className={`px-2 py-1 rounded-full text-xs mr-2 ${d.estado === "pendiente" ? "bg-amber-100 text-amber-700" : d.estado === "en_proceso" ? "bg-blue-100 text-blue-700" : d.estado === "resuelto" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-700"}`}>{d.estado.replace("_", " ")}</span>
+                      <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">{d.tipo}</span>
+                    </div>
+                    <span className="text-gray-400 text-xs">{new Date(d.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 mb-1">{d.asunto}</h4>
+                  <p className="text-gray-600 text-sm mb-2">{d.descripcion}</p>
+                  {d.respuestas?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-green-200">
+                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {d.respuestas.length} respuesta(s)</p>
+                      <div className="bg-white p-2 rounded-lg text-sm text-gray-700">{d.respuestas[d.respuestas.length - 1].mensaje}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-400 text-center py-8">No tienes denuncias</p>}
+        </div>
         {/* Beneficios - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100">
           <div className="flex items-center justify-between mb-6">
@@ -332,6 +389,48 @@ function MiPortal() {
         </div>
       )}
     </div>
+
+      {showDenunciaModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-800">Nueva Denuncia</h3>
+              <button onClick={() => setShowDenunciaModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+            </div>
+            <form onSubmit={handleDenuncia} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Tipo</label>
+                <select value={denunciaForm.tipo} onChange={(e) => setDenunciaForm({...denunciaForm, tipo: e.target.value})} className="input-field">
+                  <option value="reclamo">Reclamo</option>
+                  <option value="consulta">Consulta</option>
+                  <option value="sugerencia">Sugerencia</option>
+                  <option value="urgencia">Urgencia</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Propiedad</label>
+                <select value={denunciaForm.propiedad} onChange={(e) => setDenunciaForm({...denunciaForm, propiedad: e.target.value})} className="input-field">
+                  <option value="">-- Seleccionar --</option>
+                  {misPropiedades.map(p => <option key={p._id} value={p._id}>{p.nombre || p.codigo}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Asunto</label>
+                <input type="text" value={denunciaForm.asunto} onChange={(e) => setDenunciaForm({...denunciaForm, asunto: e.target.value})} className="input-field" placeholder="Breve descripción" required />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Descripción</label>
+                <textarea value={denunciaForm.descripcion} onChange={(e) => setDenunciaForm({...denunciaForm, descripcion: e.target.value})} className="input-field" rows="4" placeholder="Detalla tu reclamo..." required></textarea>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Adjuntar archivo</label>
+                <input type="file" onChange={(e) => setDenunciaForm({...denunciaForm, archivo: e.target.files[0]})} className="input-field" accept="image/*,.pdf" />
+              </div>
+              <button type="submit" className="w-full btn-primary justify-center">Enviar Denuncia</button>
+            </form>
+          </div>
+        </div>
+      )}
   );
 }
 

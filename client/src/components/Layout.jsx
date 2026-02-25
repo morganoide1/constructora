@@ -8,6 +8,7 @@ import {
   FileText,
   TrendingUp,
   Gift,
+  AlertTriangle,
   LogOut,
   Menu,
   X
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/pyl', icon: TrendingUp, label: 'P&L' },
   { path: '/beneficios', icon: Gift, label: 'Beneficios' },
   { path: '/expensas', icon: FileText, label: 'Expensas' },
+  { path: '/denuncias', icon: AlertTriangle, label: 'Denuncias' },
 ];
 
 function Layout() {
