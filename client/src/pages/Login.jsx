@@ -33,8 +33,8 @@ function Login() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 mb-4 shadow-lg">
-            <Building2 className="w-10 h-10 text-white" />
+          <div className="mb-4">
+            <img src="/logo.png" alt="Wave Realty" className="w-32 h-32 object-contain" />
           </div>
           <h1 className="font-display text-3xl font-bold text-gray-800">Wave Realty - Constructora</h1>
           <p className="text-gray-500 mt-2">ERP</p>
