@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Building2, DollarSign, Calendar, TrendingUp, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,16 +10,15 @@ function MiPortal() {
   const [edificios, setEdificios] = useState([]);
   const [gastos, setGastos] = useState([]);
   const [expensas, setExpensas] = useState([]);
+  const [denuncias, setDenuncias] = useState([]);
   const [misPropiedades, setMisPropiedades] = useState([]);
   const [showGastoModal, setShowGastoModal] = useState(false);
   const [showDenunciaModal, setShowDenunciaModal] = useState(false);
-  const [denuncias, setDenuncias] = useState([]);
-  const [denunciaForm, setDenunciaForm] = useState({ tipo: "reclamo", asunto: "", descripcion: "", propiedad: "", archivo: null });
   const [gastoForm, setGastoForm] = useState({ tipo: 'expensas', descripcion: '', monto: '', moneda: 'ARS', propiedad: '', archivo: null });
+  const [denunciaForm, setDenunciaForm] = useState({ tipo: 'reclamo', asunto: '', descripcion: '', propiedad: '', archivo: null });
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
   const proyectosRef = useRef(null);
   const beneficiosRef = useRef(null);
 
@@ -28,19 +27,21 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const propsRes = await axios.get('/api/clientes/mi-portal/propiedades');
+      const [propsRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes] = await Promise.all([
+        axios.get('/api/clientes/mi-portal/propiedades'),
+        axios.get('/api/beneficios').catch(() => ({ data: [] })),
+        axios.get('/api/edificios').catch(() => ({ data: [] })),
+        axios.get('/api/gastos/mis-gastos').catch(() => ({ data: [] })),
+        axios.get('/api/gastos/mis-propiedades').catch(() => ({ data: [] })),
+        axios.get('/api/expensas/mis-expensas').catch(() => ({ data: [] })),
+        axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] }))
+      ]);
       setPropiedades(propsRes.data);
-      const beneficiosRes = await axios.get('/api/beneficios').catch(() => ({ data: [] }));
       setBeneficios(beneficiosRes.data);
-      const edificiosRes = await axios.get('/api/edificios').catch(() => ({ data: [] }));
       setEdificios(edificiosRes.data);
-      const gastosRes = await axios.get('/api/gastos/mis-gastos').catch(() => ({ data: [] }));
       setGastos(gastosRes.data);
-      const misPropRes = await axios.get('/api/gastos/mis-propiedades').catch(() => ({ data: [] }));
       setMisPropiedades(misPropRes.data);
-      const expensasRes = await axios.get('/api/expensas/mis-expensas').catch(() => ({ data: [] }));
       setExpensas(expensasRes.data);
-      const denunciasRes = await axios.get("/api/denuncias/mis-denuncias").catch(() => ({ data: [] }));
       setDenuncias(denunciasRes.data);
     } catch (err) {
       console.error(err);
@@ -51,8 +52,7 @@ function MiPortal() {
 
   const scroll = (ref, direction) => {
     if (ref.current) {
-      const scrollAmount = 320;
-      ref.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      ref.current.scrollBy({ left: direction === 'left' ? -320 : 320, behavior: 'smooth' });
     }
   };
 
@@ -71,38 +71,37 @@ function MiPortal() {
       setGastoForm({ tipo: 'expensas', descripcion: '', monto: '', moneda: 'ARS', propiedad: '', archivo: null });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al registrar gasto');
+      alert(err.response?.data?.error || 'Error');
     }
   };
 
   const handleDeleteGasto = async (id) => {
-    if (confirm('¿Eliminar este gasto?')) {
+    if (confirm('¿Eliminar?')) {
       await axios.delete(`/api/gastos/${id}`);
       fetchData();
     }
   };
 
-
   const handleDenuncia = async (e) => {
     e.preventDefault();
     try {
       const formData = new FormData();
-      formData.append("tipo", denunciaForm.tipo);
-      formData.append("asunto", denunciaForm.asunto);
-      formData.append("descripcion", denunciaForm.descripcion);
-      if (denunciaForm.propiedad) formData.append("propiedad", denunciaForm.propiedad);
-      if (denunciaForm.archivo) formData.append("archivo", denunciaForm.archivo);
-      await axios.post("/api/denuncias", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      formData.append('tipo', denunciaForm.tipo);
+      formData.append('asunto', denunciaForm.asunto);
+      formData.append('descripcion', denunciaForm.descripcion);
+      if (denunciaForm.propiedad) formData.append('propiedad', denunciaForm.propiedad);
+      if (denunciaForm.archivo) formData.append('archivo', denunciaForm.archivo);
+      await axios.post('/api/denuncias', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setShowDenunciaModal(false);
-      setDenunciaForm({ tipo: "reclamo", asunto: "", descripcion: "", propiedad: "", archivo: null });
+      setDenunciaForm({ tipo: 'reclamo', asunto: '', descripcion: '', propiedad: '', archivo: null });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.error || "Error al crear denuncia");
+      alert(err.response?.data?.error || 'Error');
     }
   };
+
   const fmtARS = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
-
   const handleLogout = () => { logout(); navigate('/login'); };
 
   if (loading) return (
@@ -135,12 +134,13 @@ function MiPortal() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        {/* Mis Propiedades */}
         {propiedades.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">{p.propiedad.nombre}</h2>
-                <p className="text-gray-500">{p.propiedad.ubicacion?.piso && `Piso ${p.propiedad.ubicacion.piso}`} {p.propiedad.ubicacion?.unidad && `- Unidad ${p.propiedad.ubicacion.unidad}`}</p>
+                <p className="text-gray-500">{p.propiedad.ubicacion?.piso && `Piso ${p.propiedad.ubicacion.piso} - Unidad ${p.propiedad.ubicacion.unidad}`}</p>
               </div>
               <div className="flex items-center gap-4">
                 <span className={`badge ${p.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{p.estado}</span>
@@ -153,7 +153,7 @@ function MiPortal() {
                   <Building2 className="w-5 h-5 text-green-600" />
                   <h4 className="font-semibold text-gray-800">{p.propiedad.edificio.nombre}</h4>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {p.propiedad.edificio.avanceObra > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-purple-600">{p.propiedad.edificio.avanceObra}%</p><p className="text-xs text-gray-500">Avance</p></div>}
                   {p.propiedad.edificio.porcentajeVendido > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-emerald-600">{p.propiedad.edificio.porcentajeVendido}%</p><p className="text-xs text-gray-500">Vendido</p></div>}
                 </div>
@@ -201,7 +201,7 @@ function MiPortal() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-100"><Briefcase className="w-6 h-6 text-blue-600" /></div>
-              <div><h2 className="text-xl font-bold text-gray-800">Proyectos de Inversión</h2></div>
+              <h2 className="text-xl font-bold text-gray-800">Proyectos de Inversión</h2>
             </div>
             {edificios.length > 2 && (
               <div className="flex gap-2">
@@ -219,9 +219,7 @@ function MiPortal() {
                   {ed.avanceObra > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-purple-600">{ed.avanceObra}%</p><p className="text-xs text-gray-500">Avance</p></div>}
                   {ed.porcentajeVendido > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-emerald-600">{ed.porcentajeVendido}%</p><p className="text-xs text-gray-500">Vendido</p></div>}
                 </div>
-                <div className="flex flex-col gap-2">
-                  {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
-                </div>
+                {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center w-full"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
               </div>
             ))}
           </div>
@@ -275,8 +273,7 @@ function MiPortal() {
           ) : <p className="text-gray-400 text-center py-8">No tienes gastos</p>}
         </div>
 
-
-        {/* Mis Denuncias */}
+        {/* Denuncias */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -291,13 +288,13 @@ function MiPortal() {
                 <div key={d._id} className="p-4 bg-green-50 rounded-xl border border-green-200">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <span className={`px-2 py-1 rounded-full text-xs mr-2 ${d.estado === "pendiente" ? "bg-amber-100 text-amber-700" : d.estado === "en_proceso" ? "bg-blue-100 text-blue-700" : d.estado === "resuelto" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-700"}`}>{d.estado.replace("_", " ")}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs mr-2 ${d.estado === 'pendiente' ? 'bg-amber-100 text-amber-700' : d.estado === 'en_proceso' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>{d.estado.replace('_', ' ')}</span>
                       <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">{d.tipo}</span>
                     </div>
                     <span className="text-gray-400 text-xs">{new Date(d.createdAt).toLocaleDateString()}</span>
                   </div>
                   <h4 className="font-semibold text-gray-800 mb-1">{d.asunto}</h4>
-                  <p className="text-gray-600 text-sm mb-2">{d.descripcion}</p>
+                  <p className="text-gray-600 text-sm">{d.descripcion}</p>
                   {d.respuestas?.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-green-200">
                       <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {d.respuestas.length} respuesta(s)</p>
@@ -309,6 +306,7 @@ function MiPortal() {
             </div>
           ) : <p className="text-gray-400 text-center py-8">No tienes denuncias</p>}
         </div>
+
         {/* Beneficios - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100">
           <div className="flex items-center justify-between mb-6">
@@ -338,6 +336,7 @@ function MiPortal() {
         </div>
       </main>
 
+      {/* Modal Gasto */}
       {showGastoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
@@ -388,8 +387,8 @@ function MiPortal() {
           </div>
         </div>
       )}
-    </div>
 
+      {/* Modal Denuncia */}
       {showDenunciaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
@@ -431,6 +430,7 @@ function MiPortal() {
           </div>
         </div>
       )}
+    </div>
   );
 }
 
