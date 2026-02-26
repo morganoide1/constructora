@@ -1,14 +1,15 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  DollarSign, 
+  LayoutDashboard,
+  Users,
+  Building2,
+  DollarSign,
   FileText,
   TrendingUp,
   Gift,
   AlertTriangle,
+  Megaphone,
   LogOut,
   Menu,
   X
@@ -24,6 +25,7 @@ const navItems = [
   { path: '/beneficios', icon: Gift, label: 'Beneficios' },
   { path: '/expensas', icon: FileText, label: 'Expensas' },
   { path: '/denuncias', icon: AlertTriangle, label: 'Denuncias' },
+  { path: '/anuncios', icon: Megaphone, label: 'Anuncios' },
 ];
 
 function Layout() {

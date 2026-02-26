@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 function MiPortal() {
   const [propiedades, setPropiedades] = useState([]);
+  const [anuncios, setAnuncios] = useState([]);
   const [beneficios, setBeneficios] = useState([]);
   const [edificios, setEdificios] = useState([]);
   const [gastos, setGastos] = useState([]);
@@ -27,8 +28,9 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propsRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes] = await Promise.all([
+      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/propiedades'),
+        axios.get('/api/anuncios').catch(() => ({ data: [] })),
         axios.get('/api/beneficios').catch(() => ({ data: [] })),
         axios.get('/api/edificios').catch(() => ({ data: [] })),
         axios.get('/api/gastos/mis-gastos').catch(() => ({ data: [] })),
@@ -37,6 +39,10 @@ function MiPortal() {
         axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] }))
       ]);
       setPropiedades(propsRes.data);
+      setAnuncios(anunciosRes.data.map(a => ({
+        ...a,
+        _liked: (a.likes || []).some(id => id.toString() === user._id?.toString())
+      })));
       setBeneficios(beneficiosRes.data);
       setEdificios(edificiosRes.data);
       setGastos(gastosRes.data);
@@ -97,6 +103,18 @@ function MiPortal() {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const handleLike = async (anuncioId) => {
+    try {
+      const res = await axios.post(`/api/anuncios/${anuncioId}/like`);
+      setAnuncios(prev => prev.map(a => a._id === anuncioId
+        ? { ...a, _liked: res.data.liked, likes: Array(res.data.likes).fill(null) }
+        : a
+      ));
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -216,6 +234,54 @@ function MiPortal() {
           <div className="bg-white rounded-2xl p-12 shadow-lg border border-green-100 text-center">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Sin propiedades asignadas</h3>
+          </div>
+        )}
+
+        {/* Anuncios */}
+        {anuncios.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-xl bg-blue-100"><Megaphone className="w-6 h-6 text-blue-600" /></div>
+              <h2 className="text-xl font-bold text-gray-800">Anuncios</h2>
+            </div>
+            <div className="space-y-4">
+              {anuncios.map((a) => {
+                const liked = a._liked || false;
+                const likeCount = a.likes?.length || 0;
+                return (
+                  <div key={a._id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h4 className="font-semibold text-gray-800">{a.titulo}</h4>
+                          {a.edificio && (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-200 text-blue-800">{a.edificio.nombre}</span>
+                          )}
+                        </div>
+                        <p className="text-gray-500 text-xs mb-2">{new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{a.contenido}</p>
+                        {a.imagen && (
+                          <img src={a.imagen} alt={a.titulo} className="mt-3 w-full max-h-48 object-cover rounded-lg" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-3">
+                      <button
+                        onClick={() => handleLike(a._id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          liked
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 ${liked ? 'fill-green-600 text-green-600' : ''}`} />
+                        {likeCount}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
