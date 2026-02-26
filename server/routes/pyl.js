@@ -54,7 +54,7 @@ router.get('/', auth, adminOnly, async (req, res) => {
       const edificios = await Edificio.find({ activo: true });
       
       for (const ed of edificios) {
-        const movEd = movimientos.filter(m => m.edificio?._id?.toString() === ed._id.toString());
+        const movEd = movimientos.filter(m => m.edificio && m.edificio._id && m.edificio._id.toString() === ed._id.toString());
         
         const ingEd = { USD: 0, ARS: 0 };
         const egrEd = { USD: 0, ARS: 0 };
