@@ -43,8 +43,8 @@ function Layout() {
       <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-green-200 shadow-lg hidden lg:block">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden">
+              <img src="/logo.png" alt="Wave Realty" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="font-display font-bold text-gray-800">Wave Realty</h1>
@@ -96,8 +96,8 @@ function Layout() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-green-200 shadow-sm z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden">
+            <img src="/logo.png" alt="Wave Realty" className="w-full h-full object-cover" />
           </div>
           <span className="font-display font-bold text-gray-800">Wave Realty</span>
         </div>

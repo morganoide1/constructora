@@ -50,7 +50,7 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-bold text-gray-800">Dashboard</h1>
+        <div className="flex items-center gap-4"><img src="/logo.png" alt="Wave Realty" className="w-12 h-12 rounded-full object-cover" /><h1 className="text-3xl font-display font-bold text-gray-800">Dashboard</h1></div>
         <p className="text-gray-500 mt-1">Resumen general del sistema</p>
       </div>
 
