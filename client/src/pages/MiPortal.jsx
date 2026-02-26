@@ -145,7 +145,27 @@ function MiPortal() {
               <div className="flex items-center gap-4">
                 <span className={`badge ${p.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{p.estado}</span>
                 {p.propiedad?.edificio?.driveUrl && <a href={p.propiedad.edificio.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm"><FolderOpen className="w-4 h-4" /> Planos</a>}
+                {p.propiedad?.edificio?.historialObraUrl && <a href={p.propiedad.edificio.historialObraUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm"><ExternalLink className="w-4 h-4" /> Historial</a>}
               </div>
+            </div>
+            {/* Valores de inversión */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+                <p className="text-xs text-gray-500 mb-1">Valor de Compra</p>
+                <p className="text-xl font-bold text-blue-600">{fmt(p.precioVenta)}</p>
+              </div>
+              {p.propiedad.valorFuturo && (
+                <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <p className="text-xs text-gray-500 mb-1">Valor Futuro</p>
+                  <p className="text-xl font-bold text-emerald-600">{fmt(p.propiedad.valorFuturo)}</p>
+                </div>
+              )}
+              {p.propiedad.valorFuturo && p.precioVenta > 0 && (
+                <div className="text-center p-3 bg-purple-50 rounded-xl border border-purple-200">
+                  <p className="text-xs text-gray-500 mb-1">Rentabilidad Est.</p>
+                  <p className="text-xl font-bold text-purple-600">{(((p.propiedad.valorFuturo / p.precioVenta) - 1) * 100).toFixed(1)}%</p>
+                </div>
+              )}
             </div>
             {p.propiedad?.edificio && (
               <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-6">
