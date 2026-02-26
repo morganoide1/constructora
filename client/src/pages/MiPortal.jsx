@@ -193,15 +193,18 @@ function MiPortal() {
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-gray-800 mb-3">Detalle de cuotas</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-gray-800">Detalle de cuotas</h4>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-emerald-500" /> {p.cuotas.filter(c => c.estado === "pagada").length} pagadas</span>
+                  <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-gray-400" /> {p.cuotas.filter(c => c.estado === "pendiente").length} pendientes</span>
+                  {p.cuotas.filter(c => c.estado === "vencida").length > 0 && <span className="flex items-center gap-1"><AlertCircle className="w-4 h-4 text-rose-500" /> {p.cuotas.filter(c => c.estado === "vencida").length} vencidas</span>}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1">
                 {p.cuotas.map((c) => (
-                  <div key={c.numero} className={`p-3 rounded-lg text-center ${c.estado === 'pagada' ? 'bg-emerald-50 border border-emerald-200' : c.estado === 'vencida' ? 'bg-rose-50 border border-rose-200' : 'bg-gray-50 border border-gray-200'}`}>
-                    <div className="flex justify-center mb-1">
-                      {c.estado === 'pagada' ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : c.estado === 'vencida' ? <AlertCircle className="w-4 h-4 text-rose-500" /> : <Clock className="w-4 h-4 text-gray-400" />}
-                    </div>
-                    <p className="text-xs text-gray-500">Cuota {c.numero}</p>
-                    <p className={`text-sm font-medium ${c.estado === 'pagada' ? 'text-emerald-600' : c.estado === 'vencida' ? 'text-rose-600' : 'text-gray-800'}`}>{fmt(c.monto)}</p>
+                  <div key={c.numero} title={`Cuota ${c.numero}: ${fmt(c.monto)}`} className={`w-8 h-8 rounded flex items-center justify-center text-xs font-medium cursor-default ${c.estado === "pagada" ? "bg-emerald-100 text-emerald-700" : c.estado === "vencida" ? "bg-rose-100 text-rose-700" : "bg-gray-100 text-gray-600"}`}>
+                    {c.numero}
                   </div>
                 ))}
               </div>
@@ -239,7 +242,10 @@ function MiPortal() {
                   {ed.avanceObra > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-purple-600">{ed.avanceObra}%</p><p className="text-xs text-gray-500">Avance</p></div>}
                   {ed.porcentajeVendido > 0 && <div className="text-center p-2 bg-white rounded-lg"><p className="text-xl font-bold text-emerald-600">{ed.porcentajeVendido}%</p><p className="text-xs text-gray-500">Vendido</p></div>}
                 </div>
-                {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center w-full"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
+                <div className="flex flex-col gap-2">
+                  {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
+                  {ed.historialObraUrl && <a href={ed.historialObraUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Historial de Obra</a>}
+                </div>
               </div>
             ))}
           </div>
