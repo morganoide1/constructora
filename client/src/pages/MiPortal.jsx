@@ -115,8 +115,8 @@ function MiPortal() {
       <header className="bg-white border-b border-green-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden">
+              <img src="/logo.png" alt="Wave Realty" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="font-display font-bold text-gray-800">Wave Realty</h1>
