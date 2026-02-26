@@ -152,7 +152,7 @@ function MiPortal() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-200">
                 <p className="text-xs text-gray-500 mb-1">Valor de Compra</p>
-                <p className="text-xl font-bold text-blue-600">{fmt(p.precioVenta)}</p>
+                <p className="text-xl font-bold text-blue-300">{fmt(p.precioVenta)}</p>
               </div>
               {p.propiedad.valorFuturo && (
                 <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-200">
