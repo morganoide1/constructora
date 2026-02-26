@@ -50,6 +50,34 @@ router.post('/setup', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Crear nueva caja
+router.post("/", auth, adminOnly, async (req, res) => {
+  try {
+    const { nombre, tipo, categoria } = req.body;
+    const caja = new Caja({ nombre, tipo, categoria: categoria || "operativa", saldo: 0 });
+    await caja.save();
+    res.status(201).json(caja);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Actualizar caja
+router.put("/:id", auth, adminOnly, async (req, res) => {
+  try {
+    const { nombre, tipo, categoria } = req.body;
+    const caja = await Caja.findByIdAndUpdate(
+      req.params.id,
+      { nombre, tipo, categoria },
+      { new: true }
+    );
+    if (!caja) return res.status(404).json({ error: "Caja no encontrada" });
+    res.json(caja);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Registrar movimiento (ingreso/egreso)
 router.post('/:id/movimiento', auth, adminOnly, upload.single('archivo'), async (req, res) => {
   try {
