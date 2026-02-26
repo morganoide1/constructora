@@ -126,6 +126,29 @@ router.post('/', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Actualizar venta
+router.put("/:id", auth, adminOnly, async (req, res) => {
+  try {
+    const { precioVenta, anticipo } = req.body;
+    const venta = await Venta.findById(req.params.id);
+    if (!venta) return res.status(404).json({ error: "Venta no encontrada" });
+    
+    if (precioVenta) venta.precioVenta = precioVenta;
+    if (anticipo) venta.anticipo = anticipo;
+    
+    // Recalcular saldo pendiente
+    const totalPagado = venta.cuotas.filter(c => c.estado === "pagada").reduce((sum, c) => sum + c.monto, 0) + (venta.anticipo?.pagado ? venta.anticipo.monto : 0);
+    venta.totalPagado = totalPagado;
+    venta.saldoPendiente = venta.precioVenta - totalPagado;
+    
+    await venta.save();
+    res.json(venta);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+
 // Registrar pago de cuota
 router.post('/:id/pago', auth, adminOnly, async (req, res) => {
   try {
