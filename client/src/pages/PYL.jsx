@@ -114,7 +114,7 @@ function PYL() {
               <tbody>
                 {data.porEdificio.map((ed, i) => (
                   <tr key={i} className="border-b border-gray-100 hover:bg-green-50">
-                    <td className="py-3 text-gray-800 font-medium">{ed.edificio || 'Sin asignar'}</td>
+                    <td className="py-3 text-gray-800 font-medium">{ed.nombre || 'Sin asignar'}</td>
                     <td className="py-3 text-right text-emerald-600">{fmt(ed.ingresos?.USD)}</td>
                     <td className="py-3 text-right text-rose-600">{fmt(ed.egresos?.USD)}</td>
                     <td className={`py-3 text-right font-medium ${(ed.ingresos?.USD - ed.egresos?.USD) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>

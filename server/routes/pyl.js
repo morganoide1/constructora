@@ -51,7 +51,7 @@ router.get('/', auth, adminOnly, async (req, res) => {
     // Si es vista general, calcular por edificio
     let porEdificio = [];
     if (!edificio) {
-      const edificios = await Edificio.find({ activo: true });
+      const edificios = await Edificio.find({ activo: { $ne: false } });
       
       for (const ed of edificios) {
         const movEd = movimientos.filter(m => m.edificio && m.edificio._id && m.edificio._id.toString() === ed._id.toString());
