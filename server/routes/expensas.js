@@ -87,7 +87,7 @@ router.get('/mis-expensas', auth, async (req, res) => {
     const propiedadIds = ventas.map(v => v.propiedad);
     
     const expensas = await Expensa.find({ propiedad: { $in: propiedadIds } })
-      .populate('propiedad', 'nombre codigo')
+      .populate({ path: 'propiedad', select: 'nombre codigo edificio', populate: { path: 'edificio', select: 'nombre linkPagoAutomatico linkPagoMomento' } })
       .sort({ 'periodo.año': -1, 'periodo.mes': -1 });
     
     res.json(expensas);

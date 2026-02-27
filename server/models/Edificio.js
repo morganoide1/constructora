@@ -53,6 +53,14 @@ const edificioSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  linkPagoAutomatico: {
+    type: String,
+    trim: true
+  },
+  linkPagoMomento: {
+    type: String,
+    trim: true
+  },
   activo: {
     type: Boolean,
     default: true

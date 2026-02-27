@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Building2, Plus, X, Edit, ImagePlus } from 'lucide-react';
+import { Building2, Plus, X, Edit, ImagePlus, Link } from 'lucide-react';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
@@ -16,6 +16,8 @@ function Ventas() {
   const [editingPropiedad, setEditingPropiedad] = useState(null);
   const [editingVenta, setEditingVenta] = useState(null);
   const [uploadingImagenEdificio, setUploadingImagenEdificio] = useState(null);
+  const [editingEdificio, setEditingEdificio] = useState(null);
+  const [edificioLinkForm, setEdificioLinkForm] = useState({ linkPagoAutomatico: '', linkPagoMomento: '' });
   const [selectedVenta, setSelectedVenta] = useState(null);
   const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
   const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, cuotasNum: 12 });
@@ -115,6 +117,21 @@ function Ventas() {
     }
   };
 
+  const openEdificioLinks = (ed) => {
+    setEditingEdificio(ed._id);
+    setEdificioLinkForm({ linkPagoAutomatico: ed.linkPagoAutomatico || '', linkPagoMomento: ed.linkPagoMomento || '' });
+  };
+
+  const handleGuardarLinks = async () => {
+    try {
+      await axios.put(`/api/edificios/${editingEdificio}`, edificioLinkForm);
+      setEditingEdificio(null);
+      fetchData();
+    } catch (err) {
+      alert('Error al guardar');
+    }
+  };
+
   const handleImagenEdificio = async (edificioId, file) => {
     if (!file) return;
     const formData = new FormData();
@@ -152,7 +169,7 @@ function Ventas() {
             {edificios.map(ed => (
               <div key={ed._id} className="rounded-xl border border-gray-200 overflow-hidden">
                 {ed.imagen
-                  ? <img src={ed.imagen} alt={ed.nombre} className="w-full h-28 object-cover" />
+                  ? <img src={ed.imagen} alt={ed.nombre} className="w-full h-28 object-contain bg-gray-50" />
                   : <div className="w-full h-28 bg-gray-100 flex items-center justify-center"><Building2 className="w-8 h-8 text-gray-300" /></div>
                 }
                 <div className="p-2">
@@ -162,6 +179,9 @@ function Ventas() {
                     {ed.imagen ? 'Cambiar imagen' : 'Subir imagen'}
                     <input type="file" accept="image/*" className="hidden" onChange={e => handleImagenEdificio(ed._id, e.target.files[0])} />
                   </label>
+                  <button onClick={() => openEdificioLinks(ed)} className="mt-1 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700">
+                    <Link className="w-3.5 h-3.5" /> Links de pago
+                  </button>
                 </div>
               </div>
             ))}
@@ -298,6 +318,34 @@ function Ventas() {
               <div><label className="block text-sm text-gray-600 mb-2">Depositar en Caja</label><select value={pagoForm.cajaId} onChange={(e) => setPagoForm({...pagoForm, cajaId: e.target.value})} className="input-field"><option value="">No registrar</option>{cajas.filter(c => c.tipo === 'USD').map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}</select></div>
               <button type="submit" className="w-full btn-primary justify-center">Registrar Pago</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Links de pago edificio */}
+      {editingEdificio && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-semibold text-gray-800">Links de pago</h3>
+              <button onClick={() => setEditingEdificio(null)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Link pago automático mensual</label>
+                <p className="text-xs text-gray-400 mb-1">El cliente se adhiere con tarjeta (puede tener precio especial)</p>
+                <input type="url" value={edificioLinkForm.linkPagoAutomatico} onChange={e => setEdificioLinkForm(f => ({ ...f, linkPagoAutomatico: e.target.value }))} className="input-field" placeholder="https://..." />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Link pago en el momento</label>
+                <p className="text-xs text-gray-400 mb-1">Pago único por cada expensa</p>
+                <input type="url" value={edificioLinkForm.linkPagoMomento} onChange={e => setEdificioLinkForm(f => ({ ...f, linkPagoMomento: e.target.value }))} className="input-field" placeholder="https://..." />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setEditingEdificio(null)} className="flex-1 btn-secondary justify-center">Cancelar</button>
+                <button onClick={handleGuardarLinks} className="flex-1 btn-primary justify-center">Guardar</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

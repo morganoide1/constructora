@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar, Users } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar, Users, Wrench } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +21,7 @@ function MiPortal() {
   const [calAnio, setCalAnio] = useState(new Date().getFullYear());
   const [fechasBloqueadas, setFechasBloqueadas] = useState([]);
   const [misReservas, setMisReservas] = useState([]);
+  const [mantenimientos, setMantenimientos] = useState([]);
   const [showReservaModal, setShowReservaModal] = useState(false);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [notasReserva, setNotasReserva] = useState('');
@@ -39,7 +40,7 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, vecinosRes, espaciosRes, misReservasRes] = await Promise.all([
+      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, vecinosRes, espaciosRes, misReservasRes, mantRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/propiedades'),
         axios.get('/api/anuncios').catch(() => ({ data: [] })),
         axios.get('/api/beneficios').catch(() => ({ data: [] })),
@@ -50,7 +51,8 @@ function MiPortal() {
         axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] })),
         axios.get('/api/denuncias/vecinos').catch(() => ({ data: [] })),
         axios.get('/api/espacios').catch(() => ({ data: [] })),
-        axios.get('/api/reservas/mis-reservas').catch(() => ({ data: [] }))
+        axios.get('/api/reservas/mis-reservas').catch(() => ({ data: [] })),
+        axios.get('/api/mantenimiento').catch(() => ({ data: [] }))
       ]);
       setPropiedades(propsRes.data);
       setAnuncios(anunciosRes.data.map(a => ({
@@ -71,6 +73,7 @@ function MiPortal() {
       setEspacios(espList);
       setMisReservas(misReservasRes.data);
       if (espList.length > 0 && !espacioSeleccionado) setEspacioSeleccionado(espList[0]._id);
+      setMantenimientos(mantRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -359,7 +362,7 @@ function MiPortal() {
                         <p className="text-gray-500 text-xs mb-2">{new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                         <p className="text-gray-700 text-sm whitespace-pre-wrap">{a.contenido}</p>
                         {a.imagen && (
-                          <img src={a.imagen} alt={a.titulo} className="mt-3 w-full max-h-48 object-cover rounded-lg" />
+                          <img src={a.imagen} alt={a.titulo} className="mt-3 w-full object-contain rounded-lg bg-gray-50" />
                         )}
                       </div>
                     </div>
@@ -401,7 +404,7 @@ function MiPortal() {
             {edificios.map((ed) => (
               <div key={ed._id} className="flex-shrink-0 w-80 bg-green-50 rounded-xl border border-green-200 snap-start overflow-hidden">
                 {ed.imagen && (
-                  <img src={ed.imagen} alt={ed.nombre} className="w-full h-36 object-cover" />
+                  <img src={ed.imagen} alt={ed.nombre} className="w-full max-h-48 object-contain bg-gray-50" />
                 )}
                 <div className="p-4">
                 <h4 className="font-semibold text-gray-800 text-lg mb-2">{ed.nombre}</h4>
@@ -428,15 +431,37 @@ function MiPortal() {
           </div>
           {expensas.length > 0 ? (
             <div className="space-y-3">
-              {expensas.map((exp) => (
-                <div key={exp._id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div>
-                    <span className="text-gray-800 font-medium">{exp.propiedad?.nombre}</span>
-                    <p className="text-gray-500 text-sm">{exp.periodo.mes}/{exp.periodo.año}</p>
+              {expensas.map((exp) => {
+                const edificio = exp.propiedad?.edificio;
+                return (
+                  <div key={exp._id} className="p-4 bg-green-50 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-gray-800 font-medium">{exp.propiedad?.nombre}</span>
+                        <p className="text-gray-500 text-sm">{exp.periodo.mes}/{exp.periodo.año}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-amber-600">{fmtARS(exp.montoTotal)}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${exp.estado === 'pagada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{exp.estado}</span>
+                      </div>
+                    </div>
+                    {exp.estado !== 'pagada' && (edificio?.linkPagoAutomatico || edificio?.linkPagoMomento) && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {edificio?.linkPagoAutomatico && (
+                          <a href={edificio.linkPagoAutomatico} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-medium px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                            Débito automático
+                          </a>
+                        )}
+                        {edificio?.linkPagoMomento && (
+                          <a href={edificio.linkPagoMomento} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-xs font-medium px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                            Pagar ahora
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-lg font-bold text-amber-600">{fmtARS(exp.montoTotal)}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : <p className="text-gray-400 text-center py-8">No tienes expensas</p>}
         </div>
@@ -492,7 +517,7 @@ function MiPortal() {
                   <p className="text-gray-600 text-sm">{d.descripcion}</p>
                   {d.archivo && isImage(d.archivo) && (
                     <a href={d.archivo} target="_blank" rel="noopener noreferrer">
-                      <img src={d.archivo} alt="adjunto" className="mt-2 w-full max-h-32 object-cover rounded-lg border border-green-200 hover:opacity-90" />
+                      <img src={d.archivo} alt="adjunto" className="mt-2 w-full object-contain rounded-lg border border-green-200 hover:opacity-90 bg-gray-50" />
                     </a>
                   )}
                   {d.respuestas?.length > 0 && (
@@ -529,7 +554,7 @@ function MiPortal() {
                     <p className="text-gray-600 text-sm">{d.descripcion}</p>
                     {d.archivo && isImage(d.archivo) && (
                       <a href={d.archivo} target="_blank" rel="noopener noreferrer">
-                        <img src={d.archivo} alt="adjunto" className="mt-2 w-full max-h-40 object-cover rounded-lg border border-blue-200 hover:opacity-90" />
+                        <img src={d.archivo} alt="adjunto" className="mt-2 w-full object-contain rounded-lg border border-blue-200 hover:opacity-90 bg-gray-50" />
                       </a>
                     )}
                     <div className="flex justify-end mt-3">
@@ -651,6 +676,57 @@ function MiPortal() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Historial de Mantenimiento */}
+        {mantenimientos.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-3 rounded-xl bg-amber-100"><Wrench className="w-6 h-6 text-amber-600" /></div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Historial de Mantenimiento</h2>
+                <p className="text-sm text-gray-500">Trabajos realizados en tu edificio</p>
+              </div>
+            </div>
+            {(() => {
+              const TIPO_COLORS = { limpieza: 'bg-blue-100 text-blue-700', mantenimiento: 'bg-amber-100 text-amber-700', reparacion: 'bg-rose-100 text-rose-700', inspeccion: 'bg-purple-100 text-purple-700', otro: 'bg-gray-100 text-gray-700' };
+              const agrupados = mantenimientos.reduce((acc, r) => {
+                const key = r.edificio?._id || 'sin';
+                const label = r.edificio?.nombre || 'Edificio';
+                if (!acc[key]) acc[key] = { label, items: [] };
+                acc[key].items.push(r);
+                return acc;
+              }, {});
+              return Object.entries(agrupados).map(([key, grupo]) => (
+                <div key={key} className="mb-4 last:mb-0">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{grupo.label}</p>
+                  <div className="space-y-3">
+                    {grupo.items.map(r => (
+                      <div key={r._id} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        {r.imagen ? (
+                          <a href={r.imagen} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                            <img src={r.imagen} alt={r.titulo} className="w-14 h-14 object-contain rounded-lg border border-amber-200 bg-white" />
+                          </a>
+                        ) : (
+                          <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Wrench className="w-5 h-5 text-amber-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TIPO_COLORS[r.tipo] || 'bg-gray-100 text-gray-600'}`}>{r.tipo}</span>
+                            <span className="text-xs text-gray-400">{new Date(r.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' })}</span>
+                          </div>
+                          <p className="font-semibold text-gray-800 text-sm">{r.titulo}</p>
+                          {r.descripcion && <p className="text-gray-500 text-xs mt-0.5">{r.descripcion}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         )}
 

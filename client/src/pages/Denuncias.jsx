@@ -166,7 +166,7 @@ function Denuncias() {
                 {selectedDenuncia.archivo && (
                   isImage(selectedDenuncia.archivo)
                     ? <a href={selectedDenuncia.archivo} target="_blank" rel="noopener noreferrer">
-                        <img src={selectedDenuncia.archivo} alt="Adjunto" className="mt-3 w-full max-h-48 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity" />
+                        <img src={selectedDenuncia.archivo} alt="Adjunto" className="mt-3 w-full object-contain rounded-xl border border-gray-200 hover:opacity-90 transition-opacity bg-gray-50" />
                       </a>
                     : <a href={selectedDenuncia.archivo} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-green-600 text-sm hover:underline">Ver archivo adjunto</a>
                 )}

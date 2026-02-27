@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Megaphone,
   Calendar,
+  Wrench,
   LogOut,
   Menu,
   X
@@ -28,6 +29,7 @@ const navItems = [
   { path: '/denuncias', icon: AlertTriangle, label: 'Denuncias' },
   { path: '/anuncios', icon: Megaphone, label: 'Anuncios' },
   { path: '/reservas', icon: Calendar, label: 'Reservas' },
+  { path: '/mantenimiento', icon: Wrench, label: 'Mantenimiento' },
 ];
 
 function Layout() {

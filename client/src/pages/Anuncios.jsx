@@ -174,10 +174,10 @@ function Anuncios() {
               <div>
                 <label className="block text-sm text-gray-600 mb-2">Imagen (opcional)</label>
                 {form.imagen && !form.imagenFile && (
-                  <img src={form.imagen} alt="preview" className="w-full h-28 object-cover rounded-xl mb-2 border border-gray-100" />
+                  <img src={form.imagen} alt="preview" className="w-full object-contain rounded-xl mb-2 border border-gray-100 bg-gray-50" />
                 )}
                 {form.imagenFile && (
-                  <img src={URL.createObjectURL(form.imagenFile)} alt="preview" className="w-full h-28 object-cover rounded-xl mb-2 border border-gray-100" />
+                  <img src={URL.createObjectURL(form.imagenFile)} alt="preview" className="w-full object-contain rounded-xl mb-2 border border-gray-100 bg-gray-50" />
                 )}
                 <input
                   type="file"
