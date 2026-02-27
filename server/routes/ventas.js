@@ -12,9 +12,10 @@ const router = express.Router();
 // Listar propiedades
 router.get('/propiedades', auth, async (req, res) => {
   try {
-    const { estado } = req.query;
+    const { estado, edificio } = req.query;
     let query = {};
-    if (estado) query.estado = estado;
+    if (estado)   query.estado   = estado;
+    if (edificio) query.edificio = edificio;
 
     const propiedades = await Propiedad.find(query).sort({ codigo: 1 });
     res.json(propiedades);

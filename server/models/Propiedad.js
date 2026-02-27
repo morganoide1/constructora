@@ -46,7 +46,8 @@ const propiedadSchema = new mongoose.Schema({
   },
   caracteristicas: [String],
   imagenes: [String],
-  planos: [String]
+  planos: [String],
+  coeficiente: { type: Number, default: 0, min: 0, max: 100 }
 }, {
   timestamps: true
 });
