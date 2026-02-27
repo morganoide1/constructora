@@ -18,6 +18,8 @@ const presupuestosRoutes = require('./routes/presupuestos');
 const expensasRoutes = require('./routes/expensas');
 const denunciasRoutes = require('./routes/denuncias');
 const anunciosRoutes = require('./routes/anuncios');
+const espaciosRoutes = require('./routes/espacios');
+const reservasRoutes = require('./routes/reservas');
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.use('/api/presupuestos', presupuestosRoutes);
 app.use('/api/expensas', expensasRoutes);
 app.use('/api/denuncias', denunciasRoutes);
 app.use('/api/anuncios', anunciosRoutes);
+app.use('/api/espacios', espaciosRoutes);
+app.use('/api/reservas', reservasRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Ruta para servir la aplicación React

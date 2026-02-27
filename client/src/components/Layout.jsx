@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
+import {
   LayoutDashboard,
   Users,
   Building2,
@@ -10,6 +10,7 @@ import {
   Gift,
   AlertTriangle,
   Megaphone,
+  Calendar,
   LogOut,
   Menu,
   X
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/expensas', icon: FileText, label: 'Expensas' },
   { path: '/denuncias', icon: AlertTriangle, label: 'Denuncias' },
   { path: '/anuncios', icon: Megaphone, label: 'Anuncios' },
+  { path: '/reservas', icon: Calendar, label: 'Reservas' },
 ];
 
 function Layout() {

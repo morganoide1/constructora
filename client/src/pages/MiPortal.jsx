@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,16 @@ function MiPortal() {
   const [expensas, setExpensas] = useState([]);
   const [denuncias, setDenuncias] = useState([]);
   const [misPropiedades, setMisPropiedades] = useState([]);
+  // Reservas
+  const [espacios, setEspacios] = useState([]);
+  const [espacioSeleccionado, setEspacioSeleccionado] = useState('');
+  const [calMes, setCalMes] = useState(new Date().getMonth() + 1);
+  const [calAnio, setCalAnio] = useState(new Date().getFullYear());
+  const [fechasBloqueadas, setFechasBloqueadas] = useState([]);
+  const [misReservas, setMisReservas] = useState([]);
+  const [showReservaModal, setShowReservaModal] = useState(false);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  const [notasReserva, setNotasReserva] = useState('');
   const [showGastoModal, setShowGastoModal] = useState(false);
   const [showDenunciaModal, setShowDenunciaModal] = useState(false);
   const [gastoForm, setGastoForm] = useState({ tipo: 'expensas', descripcion: '', monto: '', moneda: 'ARS', propiedad: '', archivo: null });
@@ -28,7 +38,7 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes] = await Promise.all([
+      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, espaciosRes, misReservasRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/propiedades'),
         axios.get('/api/anuncios').catch(() => ({ data: [] })),
         axios.get('/api/beneficios').catch(() => ({ data: [] })),
@@ -36,7 +46,9 @@ function MiPortal() {
         axios.get('/api/gastos/mis-gastos').catch(() => ({ data: [] })),
         axios.get('/api/gastos/mis-propiedades').catch(() => ({ data: [] })),
         axios.get('/api/expensas/mis-expensas').catch(() => ({ data: [] })),
-        axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] }))
+        axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] })),
+        axios.get('/api/espacios').catch(() => ({ data: [] })),
+        axios.get('/api/reservas/mis-reservas').catch(() => ({ data: [] }))
       ]);
       setPropiedades(propsRes.data);
       setAnuncios(anunciosRes.data.map(a => ({
@@ -49,12 +61,78 @@ function MiPortal() {
       setMisPropiedades(misPropRes.data);
       setExpensas(expensasRes.data);
       setDenuncias(denunciasRes.data);
+      const espList = espaciosRes.data;
+      setEspacios(espList);
+      setMisReservas(misReservasRes.data);
+      if (espList.length > 0 && !espacioSeleccionado) setEspacioSeleccionado(espList[0]._id);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Fetch disponibilidad cuando cambia espacio o mes
+  useEffect(() => {
+    if (!espacioSeleccionado) return;
+    axios.get('/api/reservas/disponibilidad', { params: { espacioId: espacioSeleccionado, mes: calMes, año: calAnio } })
+      .then(res => setFechasBloqueadas(res.data))
+      .catch(() => setFechasBloqueadas([]));
+  }, [espacioSeleccionado, calMes, calAnio]);
+
+  const handleReservar = async () => {
+    try {
+      await axios.post('/api/reservas', { espacio: espacioSeleccionado, fecha: fechaSeleccionada, notas: notasReserva });
+      setShowReservaModal(false);
+      setNotasReserva('');
+      setFechaSeleccionada(null);
+      // Refrescar
+      const [dispRes, misRes] = await Promise.all([
+        axios.get('/api/reservas/disponibilidad', { params: { espacioId: espacioSeleccionado, mes: calMes, año: calAnio } }),
+        axios.get('/api/reservas/mis-reservas')
+      ]);
+      setFechasBloqueadas(dispRes.data);
+      setMisReservas(misRes.data);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al reservar');
+    }
+  };
+
+  const handleCancelarReserva = async (id) => {
+    if (!confirm('¿Cancelar esta reserva?')) return;
+    await axios.delete(`/api/reservas/${id}`);
+    const [dispRes, misRes] = await Promise.all([
+      axios.get('/api/reservas/disponibilidad', { params: { espacioId: espacioSeleccionado, mes: calMes, año: calAnio } }),
+      axios.get('/api/reservas/mis-reservas')
+    ]);
+    setFechasBloqueadas(dispRes.data);
+    setMisReservas(misRes.data);
+  };
+
+  // Generar grilla de días del mes
+  const buildCalendar = () => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const primerDia = new Date(calAnio, calMes - 1, 1).getDay(); // 0=dom
+    const diasEnMes = new Date(calAnio, calMes, 0).getDate();
+    // Convertir domingo=0 a lunes=0
+    const offset = (primerDia + 6) % 7;
+    const celdas = [];
+    for (let i = 0; i < offset; i++) celdas.push(null);
+    for (let d = 1; d <= diasEnMes; d++) celdas.push(d);
+    return { celdas, hoy };
+  };
+
+  const navegarMes = (dir) => {
+    let m = calMes + dir;
+    let a = calAnio;
+    if (m > 12) { m = 1; a++; }
+    if (m < 1) { m = 12; a--; }
+    setCalMes(m);
+    setCalAnio(a);
+  };
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   const scroll = (ref, direction) => {
     if (ref.current) {
@@ -399,6 +477,110 @@ function MiPortal() {
           ) : <p className="text-gray-400 text-center py-8">No tienes denuncias</p>}
         </div>
 
+        {/* Reservas de Espacios Comunes */}
+        {espacios.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-xl bg-green-100"><Calendar className="w-6 h-6 text-green-600" /></div>
+              <h2 className="text-xl font-bold text-gray-800">Reservar Espacio Común</h2>
+            </div>
+
+            {/* Select espacio */}
+            <div className="mb-5">
+              <label className="block text-sm text-gray-600 mb-1">Espacio</label>
+              <select
+                value={espacioSeleccionado}
+                onChange={e => setEspacioSeleccionado(e.target.value)}
+                className="input-field max-w-xs"
+              >
+                {espacios.map(esp => (
+                  <option key={esp._id} value={esp._id}>{esp.nombre} — {esp.edificio?.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Calendario */}
+            {(() => {
+              const { celdas, hoy } = buildCalendar();
+              return (
+                <div className="max-w-sm">
+                  {/* Cabecera mes */}
+                  <div className="flex items-center justify-between mb-3">
+                    <button onClick={() => navegarMes(-1)} className="p-1.5 rounded-lg hover:bg-green-50 text-gray-500">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="font-semibold text-gray-800">{MESES[calMes - 1]} {calAnio}</span>
+                    <button onClick={() => navegarMes(1)} className="p-1.5 rounded-lg hover:bg-green-50 text-gray-500">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {/* Días semana */}
+                  <div className="grid grid-cols-7 mb-1">
+                    {['L','M','X','J','V','S','D'].map(d => (
+                      <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                    ))}
+                  </div>
+                  {/* Grilla */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {celdas.map((dia, i) => {
+                      if (!dia) return <div key={`e-${i}`} />;
+                      const dateStr = `${calAnio}-${String(calMes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                      const fechaUTC = new Date(`${dateStr}T00:00:00Z`);
+                      const esPasado = fechaUTC < hoy;
+                      const esBloqueado = fechasBloqueadas.includes(dateStr);
+                      const esMioReservado = misReservas.some(r => r.estado === 'confirmada' && r.espacio?._id === espacioSeleccionado && new Date(r.fecha).toISOString().slice(0,10) === dateStr);
+                      return (
+                        <button
+                          key={dateStr}
+                          disabled={esPasado || esBloqueado}
+                          onClick={() => { setFechaSeleccionada(dateStr); setShowReservaModal(true); }}
+                          title={esBloqueado ? 'Ya reservado' : esPasado ? 'Fecha pasada' : `Reservar ${dateStr}`}
+                          className={`h-9 w-full rounded-lg text-sm font-medium transition-all
+                            ${esPasado ? 'text-gray-300 cursor-not-allowed bg-gray-50'
+                              : esBloqueado ? 'bg-red-100 text-red-400 cursor-not-allowed line-through'
+                              : esMioReservado ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-300'
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'}
+                          `}
+                        >
+                          {dia}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Leyenda */}
+                  <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-100 inline-block" />Disponible</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" />Ocupado</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-100 inline-block" />Mi reserva</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Mis reservas */}
+            {misReservas.filter(r => r.estado === 'confirmada').length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <h4 className="font-semibold text-gray-800 mb-3">Mis Reservas Activas</h4>
+                <div className="space-y-2">
+                  {misReservas.filter(r => r.estado === 'confirmada').map(r => (
+                    <div key={r._id} className="flex items-center justify-between p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <div>
+                        <span className="font-medium text-gray-800">{r.espacio?.nombre}</span>
+                        <span className="text-gray-400 mx-2">·</span>
+                        <span className="text-gray-600 text-sm">
+                          {new Date(r.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' })}
+                        </span>
+                        {r.notas && <p className="text-gray-400 text-xs mt-0.5">{r.notas}</p>}
+                      </div>
+                      <button onClick={() => handleCancelarReserva(r._id)} className="text-xs text-red-500 hover:text-red-700 hover:underline">Cancelar</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Beneficios - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100">
           <div className="flex items-center justify-between mb-6">
@@ -476,6 +658,36 @@ function MiPortal() {
               </div>
               <button type="submit" className="w-full btn-primary justify-center">Registrar</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reserva */}
+      {showReservaModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-800">Confirmar Reserva</h3>
+              <button onClick={() => setShowReservaModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+            </div>
+            <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+              <p className="text-sm text-gray-600">Espacio: <span className="font-semibold text-gray-800">{espacios.find(e => e._id === espacioSeleccionado)?.nombre}</span></p>
+              <p className="text-sm text-gray-600 mt-1">Fecha: <span className="font-semibold text-gray-800">{fechaSeleccionada ? new Date(`${fechaSeleccionada}T00:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }) : ''}</span></p>
+            </div>
+            <div className="mb-5">
+              <label className="block text-sm text-gray-600 mb-1">Notas (opcional)</label>
+              <textarea
+                value={notasReserva}
+                onChange={e => setNotasReserva(e.target.value)}
+                className="input-field"
+                rows="3"
+                placeholder="Ej: cumpleaños, asado familiar..."
+              />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowReservaModal(false)} className="flex-1 btn-secondary justify-center">Cancelar</button>
+              <button onClick={handleReservar} className="flex-1 btn-primary justify-center">Confirmar</button>
+            </div>
           </div>
         </div>
       )}
