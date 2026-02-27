@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { AlertTriangle, Plus, X, MessageCircle, Check, Clock, Eye, EyeOff, Send, Trash2 } from 'lucide-react';
+import { AlertTriangle, X, MessageCircle, Eye, EyeOff, Send, Trash2, Users, ThumbsUp } from 'lucide-react';
+
+const isImage = (url) => url && /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
 
 function Denuncias() {
   const [denuncias, setDenuncias] = useState([]);
@@ -52,6 +54,16 @@ function Denuncias() {
     try {
       await axios.put(`/api/denuncias/${id}`, { visibleCliente: visible });
       fetchData();
+    } catch (err) {
+      alert('Error');
+    }
+  };
+
+  const handleToggleVecinos = async (id, aprobada) => {
+    try {
+      await axios.put(`/api/denuncias/${id}`, { aprobadaVecinos: aprobada });
+      fetchData();
+      if (selectedDenuncia?._id === id) setSelectedDenuncia(prev => ({ ...prev, aprobadaVecinos: aprobada }));
     } catch (err) {
       alert('Error');
     }
@@ -114,7 +126,11 @@ function Denuncias() {
               <p className="text-gray-500 text-sm mb-2">{d.cliente?.nombre}</p>
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{new Date(d.createdAt).toLocaleDateString()}</span>
-                <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {d.respuestas?.length || 0}</span>
+                <div className="flex items-center gap-2">
+                  {d.aprobadaVecinos && <span className="flex items-center gap-0.5 text-blue-500"><Users className="w-3 h-3" /></span>}
+                  <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {d.likes?.length || 0}</span>
+                  <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {d.respuestas?.length || 0}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -135,6 +151,9 @@ function Denuncias() {
                     <button onClick={() => handleToggleVisibilidad(selectedDenuncia._id, !selectedDenuncia.visibleCliente)} className={`p-2 rounded-lg ${selectedDenuncia.visibleCliente ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`} title={selectedDenuncia.visibleCliente ? 'Visible para cliente' : 'Oculto para cliente'}>
                       {selectedDenuncia.visibleCliente ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
+                    <button onClick={() => handleToggleVecinos(selectedDenuncia._id, !selectedDenuncia.aprobadaVecinos)} className={`p-2 rounded-lg flex items-center gap-1 text-xs font-medium ${selectedDenuncia.aprobadaVecinos ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`} title={selectedDenuncia.aprobadaVecinos ? 'Visible para vecinos del edificio' : 'Aprobar para vecinos'}>
+                      <Users className="w-4 h-4" />
+                    </button>
                     <button onClick={() => handleDelete(selectedDenuncia._id)} className="p-2 rounded-lg bg-rose-100 text-rose-600"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
@@ -145,7 +164,16 @@ function Denuncias() {
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap">{selectedDenuncia.descripcion}</p>
                 {selectedDenuncia.archivo && (
-                  <a href={selectedDenuncia.archivo} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-green-600 text-sm hover:underline">Ver archivo adjunto</a>
+                  isImage(selectedDenuncia.archivo)
+                    ? <a href={selectedDenuncia.archivo} target="_blank" rel="noopener noreferrer">
+                        <img src={selectedDenuncia.archivo} alt="Adjunto" className="mt-3 w-full max-h-48 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity" />
+                      </a>
+                    : <a href={selectedDenuncia.archivo} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-green-600 text-sm hover:underline">Ver archivo adjunto</a>
+                )}
+                {selectedDenuncia.aprobadaVecinos && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg w-fit">
+                    <Users className="w-3.5 h-3.5" /> Visible para vecinos del edificio · {selectedDenuncia.likes?.length || 0} likes
+                  </div>
                 )}
               </div>
 

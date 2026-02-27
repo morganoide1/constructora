@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Edificio = require('../models/Edificio');
 const { auth, adminOnly } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -12,9 +13,11 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.post('/', auth, adminOnly, async (req, res) => {
+router.post('/', auth, adminOnly, upload.single('imagen'), async (req, res) => {
   try {
-    const edificio = new Edificio(req.body);
+    const data = { ...req.body };
+    if (req.file) data.imagen = `/uploads/${req.file.filename}`;
+    const edificio = new Edificio(data);
     await edificio.save();
     res.status(201).json(edificio);
   } catch (error) {
@@ -22,9 +25,11 @@ router.post('/', auth, adminOnly, async (req, res) => {
   }
 });
 
-router.put('/:id', auth, adminOnly, async (req, res) => {
+router.put('/:id', auth, adminOnly, upload.single('imagen'), async (req, res) => {
   try {
-    const edificio = await Edificio.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updates = { ...req.body };
+    if (req.file) updates.imagen = `/uploads/${req.file.filename}`;
+    const edificio = await Edificio.findByIdAndUpdate(req.params.id, updates, { new: true });
     res.json(edificio);
   } catch (error) {
     res.status(400).json({ message: error.message });

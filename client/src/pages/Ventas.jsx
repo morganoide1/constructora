@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Building2, Plus, X, Edit } from 'lucide-react';
+import { Building2, Plus, X, Edit, ImagePlus } from 'lucide-react';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
@@ -15,6 +15,7 @@ function Ventas() {
   const [showEditVentaModal, setShowEditVentaModal] = useState(false);
   const [editingPropiedad, setEditingPropiedad] = useState(null);
   const [editingVenta, setEditingVenta] = useState(null);
+  const [uploadingImagenEdificio, setUploadingImagenEdificio] = useState(null);
   const [selectedVenta, setSelectedVenta] = useState(null);
   const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
   const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, cuotasNum: 12 });
@@ -114,6 +115,18 @@ function Ventas() {
     }
   };
 
+  const handleImagenEdificio = async (edificioId, file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('imagen', file);
+    try {
+      await axios.put(`/api/edificios/${edificioId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      fetchData();
+    } catch (err) {
+      alert('Error al subir imagen');
+    }
+  };
+
   const fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div></div>;
@@ -130,6 +143,31 @@ function Ventas() {
           <button onClick={() => setShowVentaModal(true)} className="btn-primary"><Plus className="w-4 h-4" /> Nueva Venta</button>
         </div>
       </div>
+
+      {/* Edificios / Proyectos */}
+      {edificios.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Proyectos ({edificios.length})</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {edificios.map(ed => (
+              <div key={ed._id} className="rounded-xl border border-gray-200 overflow-hidden">
+                {ed.imagen
+                  ? <img src={ed.imagen} alt={ed.nombre} className="w-full h-28 object-cover" />
+                  : <div className="w-full h-28 bg-gray-100 flex items-center justify-center"><Building2 className="w-8 h-8 text-gray-300" /></div>
+                }
+                <div className="p-2">
+                  <p className="text-sm font-medium text-gray-800 truncate">{ed.nombre}</p>
+                  <label className="mt-1 flex items-center gap-1 text-xs text-green-600 hover:text-green-700 cursor-pointer">
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    {ed.imagen ? 'Cambiar imagen' : 'Subir imagen'}
+                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImagenEdificio(ed._id, e.target.files[0])} />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Propiedades */}
       <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">

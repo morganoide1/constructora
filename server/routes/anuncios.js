@@ -3,6 +3,7 @@ const router = express.Router();
 const Anuncio = require('../models/Anuncio');
 const Venta = require('../models/Venta');
 const { auth, adminOnly } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Cliente: Obtener anuncios activos (globales + los de sus edificios)
 router.get('/', auth, async (req, res) => {
@@ -48,12 +49,12 @@ router.get('/admin', auth, adminOnly, async (req, res) => {
 });
 
 // Admin: Crear anuncio
-router.post('/', auth, adminOnly, async (req, res) => {
+router.post('/', auth, adminOnly, upload.single('imagen'), async (req, res) => {
   try {
     const anuncio = new Anuncio({
       titulo:    req.body.titulo,
       contenido: req.body.contenido,
-      imagen:    req.body.imagen || undefined,
+      imagen:    req.file ? `/uploads/${req.file.filename}` : (req.body.imagen || undefined),
       edificio:  req.body.edificio || null,
       autor:     req.user._id
     });
@@ -66,12 +67,13 @@ router.post('/', auth, adminOnly, async (req, res) => {
 });
 
 // Admin: Editar anuncio
-router.put('/:id', auth, adminOnly, async (req, res) => {
+router.put('/:id', auth, adminOnly, upload.single('imagen'), async (req, res) => {
   try {
+    const existing = await Anuncio.findById(req.params.id);
     const updates = {
       titulo:    req.body.titulo,
       contenido: req.body.contenido,
-      imagen:    req.body.imagen || undefined,
+      imagen:    req.file ? `/uploads/${req.file.filename}` : (req.body.imagen || existing?.imagen),
       edificio:  req.body.edificio || null,
       activo:    req.body.activo
     };

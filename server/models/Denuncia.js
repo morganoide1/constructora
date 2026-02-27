@@ -40,10 +40,19 @@ const denunciaSchema = new mongoose.Schema({
     enum: ['baja', 'media', 'alta', 'urgente'],
     default: 'media'
   },
+  edificio: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Edificio'
+  },
   visibleCliente: {
     type: Boolean,
     default: true
   },
+  aprobadaVecinos: {
+    type: Boolean,
+    default: false
+  },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   archivo: {
     type: String,
     trim: true

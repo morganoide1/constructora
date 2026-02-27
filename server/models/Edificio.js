@@ -49,6 +49,10 @@ const edificioSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  imagen: {
+    type: String,
+    trim: true
+  },
   activo: {
     type: Boolean,
     default: true

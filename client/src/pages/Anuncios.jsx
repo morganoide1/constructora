@@ -8,7 +8,7 @@ function Anuncios() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ titulo: '', contenido: '', imagen: '', edificio: '' });
+  const [form, setForm] = useState({ titulo: '', contenido: '', imagen: '', edificio: '', imagenFile: null });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -31,16 +31,17 @@ function Anuncios() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        titulo:    form.titulo,
-        contenido: form.contenido,
-        imagen:    form.imagen || undefined,
-        edificio:  form.edificio || null
-      };
+      const formData = new FormData();
+      formData.append('titulo', form.titulo);
+      formData.append('contenido', form.contenido);
+      formData.append('edificio', form.edificio || '');
+      if (form.imagenFile) formData.append('imagen', form.imagenFile);
+      else if (form.imagen) formData.append('imagen', form.imagen);
+
       if (editing) {
-        await axios.put(`/api/anuncios/${editing}`, payload);
+        await axios.put(`/api/anuncios/${editing}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
-        await axios.post('/api/anuncios', payload);
+        await axios.post('/api/anuncios', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       }
       closeModal();
       fetchData();
@@ -54,6 +55,7 @@ function Anuncios() {
       titulo:    a.titulo,
       contenido: a.contenido,
       imagen:    a.imagen || '',
+      imagenFile: null,
       edificio:  a.edificio?._id || ''
     });
     setEditing(a._id);
@@ -70,7 +72,7 @@ function Anuncios() {
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
-    setForm({ titulo: '', contenido: '', imagen: '', edificio: '' });
+    setForm({ titulo: '', contenido: '', imagen: '', imagenFile: null, edificio: '' });
   };
 
   if (loading) return (
@@ -95,6 +97,9 @@ function Anuncios() {
         {anuncios.map((a) => (
           <div key={a._id} className={`bg-white rounded-2xl shadow-lg border border-green-100 p-5 ${!a.activo ? 'opacity-50' : ''}`}>
             <div className="flex items-start justify-between gap-4">
+              {a.imagen && (
+                <img src={a.imagen} alt={a.titulo} className="w-20 h-20 object-cover rounded-xl flex-shrink-0 border border-gray-100" />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="text-lg font-semibold text-gray-800">{a.titulo}</h3>
@@ -167,13 +172,18 @@ function Anuncios() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-2">Imagen (URL, opcional)</label>
+                <label className="block text-sm text-gray-600 mb-2">Imagen (opcional)</label>
+                {form.imagen && !form.imagenFile && (
+                  <img src={form.imagen} alt="preview" className="w-full h-28 object-cover rounded-xl mb-2 border border-gray-100" />
+                )}
+                {form.imagenFile && (
+                  <img src={URL.createObjectURL(form.imagenFile)} alt="preview" className="w-full h-28 object-cover rounded-xl mb-2 border border-gray-100" />
+                )}
                 <input
-                  type="url"
-                  value={form.imagen}
-                  onChange={(e) => setForm({ ...form, imagen: e.target.value })}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setForm({ ...form, imagenFile: e.target.files[0] || null })}
                   className="input-field"
-                  placeholder="https://..."
                 />
               </div>
               <div>

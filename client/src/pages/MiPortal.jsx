@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,7 @@ function MiPortal() {
   const [gastos, setGastos] = useState([]);
   const [expensas, setExpensas] = useState([]);
   const [denuncias, setDenuncias] = useState([]);
+  const [denunciasVecinos, setDenunciasVecinos] = useState([]);
   const [misPropiedades, setMisPropiedades] = useState([]);
   // Reservas
   const [espacios, setEspacios] = useState([]);
@@ -38,7 +39,7 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, espaciosRes, misReservasRes] = await Promise.all([
+      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, vecinosRes, espaciosRes, misReservasRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/propiedades'),
         axios.get('/api/anuncios').catch(() => ({ data: [] })),
         axios.get('/api/beneficios').catch(() => ({ data: [] })),
@@ -47,6 +48,7 @@ function MiPortal() {
         axios.get('/api/gastos/mis-propiedades').catch(() => ({ data: [] })),
         axios.get('/api/expensas/mis-expensas').catch(() => ({ data: [] })),
         axios.get('/api/denuncias/mis-denuncias').catch(() => ({ data: [] })),
+        axios.get('/api/denuncias/vecinos').catch(() => ({ data: [] })),
         axios.get('/api/espacios').catch(() => ({ data: [] })),
         axios.get('/api/reservas/mis-reservas').catch(() => ({ data: [] }))
       ]);
@@ -61,6 +63,10 @@ function MiPortal() {
       setMisPropiedades(misPropRes.data);
       setExpensas(expensasRes.data);
       setDenuncias(denunciasRes.data);
+      setDenunciasVecinos(vecinosRes.data.map(d => ({
+        ...d,
+        _liked: (d.likes || []).some(id => id.toString() === user._id?.toString())
+      })));
       const espList = espaciosRes.data;
       setEspacios(espList);
       setMisReservas(misReservasRes.data);
@@ -190,6 +196,20 @@ function MiPortal() {
       setAnuncios(prev => prev.map(a => a._id === anuncioId
         ? { ...a, _liked: res.data.liked, likes: Array(res.data.likes).fill(null) }
         : a
+      ));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const isImage = (url) => url && /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+
+  const handleLikeDenuncia = async (denunciaId) => {
+    try {
+      const res = await axios.post(`/api/denuncias/${denunciaId}/like`);
+      setDenunciasVecinos(prev => prev.map(d => d._id === denunciaId
+        ? { ...d, _liked: res.data.liked, likes: Array(res.data.likes).fill(null) }
+        : d
       ));
     } catch (err) {
       console.error(err);
@@ -379,7 +399,11 @@ function MiPortal() {
           </div>
           <div ref={proyectosRef} className="flex gap-4 overflow-x-auto pb-4 snap-x" style={{ scrollbarWidth: 'none' }}>
             {edificios.map((ed) => (
-              <div key={ed._id} className="flex-shrink-0 w-80 p-4 bg-green-50 rounded-xl border border-green-200 snap-start">
+              <div key={ed._id} className="flex-shrink-0 w-80 bg-green-50 rounded-xl border border-green-200 snap-start overflow-hidden">
+                {ed.imagen && (
+                  <img src={ed.imagen} alt={ed.nombre} className="w-full h-36 object-cover" />
+                )}
+                <div className="p-4">
                 <h4 className="font-semibold text-gray-800 text-lg mb-2">{ed.nombre}</h4>
                 {ed.direccion && <p className="text-gray-500 text-sm mb-3">{ed.direccion}</p>}
                 <div className="grid grid-cols-2 gap-2 mb-3">
@@ -389,6 +413,7 @@ function MiPortal() {
                 <div className="flex flex-col gap-2">
                   {ed.driveUrl && <a href={ed.driveUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><FolderOpen className="w-4 h-4" /> Imágenes</a>}
                   {ed.historialObraUrl && <a href={ed.historialObraUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm justify-center"><ExternalLink className="w-4 h-4" /> Historial de Obra</a>}
+                </div>
                 </div>
               </div>
             ))}
@@ -465,6 +490,11 @@ function MiPortal() {
                   </div>
                   <h4 className="font-semibold text-gray-800 mb-1">{d.asunto}</h4>
                   <p className="text-gray-600 text-sm">{d.descripcion}</p>
+                  {d.archivo && isImage(d.archivo) && (
+                    <a href={d.archivo} target="_blank" rel="noopener noreferrer">
+                      <img src={d.archivo} alt="adjunto" className="mt-2 w-full max-h-32 object-cover rounded-lg border border-green-200 hover:opacity-90" />
+                    </a>
+                  )}
                   {d.respuestas?.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-green-200">
                       <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {d.respuestas.length} respuesta(s)</p>
@@ -476,6 +506,49 @@ function MiPortal() {
             </div>
           ) : <p className="text-gray-400 text-center py-8">No tienes denuncias</p>}
         </div>
+
+        {/* Denuncias del Edificio (aprobadas por admin) */}
+        {denunciasVecinos.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-100">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-xl bg-blue-100"><Users className="w-6 h-6 text-blue-600" /></div>
+              <h2 className="text-xl font-bold text-gray-800">Novedades del Edificio</h2>
+            </div>
+            <div className="space-y-4">
+              {denunciasVecinos.map((d) => {
+                const liked = d._liked || false;
+                const likeCount = d.likes?.length || 0;
+                return (
+                  <div key={d._id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${d.tipo === 'urgencia' ? 'bg-rose-100 text-rose-700' : d.tipo === 'reclamo' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{d.tipo}</span>
+                      {d.edificio && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{d.edificio.nombre}</span>}
+                      <span className="text-gray-400 text-xs ml-auto">{new Date(d.createdAt).toLocaleDateString('es-AR')}</span>
+                    </div>
+                    <h4 className="font-semibold text-gray-800 mb-1">{d.asunto}</h4>
+                    <p className="text-gray-600 text-sm">{d.descripcion}</p>
+                    {d.archivo && isImage(d.archivo) && (
+                      <a href={d.archivo} target="_blank" rel="noopener noreferrer">
+                        <img src={d.archivo} alt="adjunto" className="mt-2 w-full max-h-40 object-cover rounded-lg border border-blue-200 hover:opacity-90" />
+                      </a>
+                    )}
+                    <div className="flex justify-end mt-3">
+                      <button
+                        onClick={() => handleLikeDenuncia(d._id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          liked ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 ${liked ? 'fill-blue-600 text-blue-600' : ''}`} />
+                        {likeCount}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Reservas de Espacios Comunes */}
         {espacios.length > 0 && (
