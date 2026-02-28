@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Building2, Plus, X, Edit, ImagePlus, Link } from 'lucide-react';
+import { Building2, Plus, X, Edit, ImagePlus, Link, Eye, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
@@ -23,6 +23,12 @@ function Ventas() {
   const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, modalidad: 'cuotas', cuotasNum: 12 });
   const [pagoForm, setPagoForm] = useState({ tipoPago: 'cuota', cuotaNumero: '', monto: '', cajaId: '', notas: '' });
   const [editVentaForm, setEditVentaForm] = useState({ precioVenta: '', anticipo: '', clienteId: '', coTitulares: [] });
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [detalleVenta, setDetalleVenta] = useState(null);
+  const [editingCuota, setEditingCuota] = useState(null);
+  const [cuotaEditForm, setCuotaEditForm] = useState({ monto: '', montoPagado: '', estado: '', fechaVencimiento: '', fechaPago: '', notas: '' });
+  const [editingAnticipo, setEditingAnticipo] = useState(false);
+  const [anticipoEditForm, setAnticipioEditForm] = useState({ monto: '', pagado: false, fechaPago: '' });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -134,6 +140,68 @@ function Ventas() {
       });
       setShowEditVentaModal(false);
       setEditingVenta(null);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const openDetalle = async (v) => {
+    const res = await axios.get(`/api/ventas/${v._id}`);
+    setDetalleVenta(res.data);
+    setShowDetalleModal(true);
+  };
+
+  const startEditCuota = (c) => {
+    setEditingCuota(c.numero);
+    setCuotaEditForm({
+      monto: c.monto,
+      montoPagado: c.montoPagado || 0,
+      estado: c.estado,
+      fechaVencimiento: c.fechaVencimiento ? c.fechaVencimiento.slice(0, 10) : '',
+      fechaPago: c.fechaPago ? c.fechaPago.slice(0, 10) : '',
+      notas: c.notas || ''
+    });
+  };
+
+  const handleSaveCuota = async () => {
+    try {
+      await axios.put(`/api/ventas/${detalleVenta._id}/cuotas/${editingCuota}`, {
+        monto: parseFloat(cuotaEditForm.monto),
+        montoPagado: parseFloat(cuotaEditForm.montoPagado),
+        estado: cuotaEditForm.estado,
+        fechaVencimiento: cuotaEditForm.fechaVencimiento || null,
+        fechaPago: cuotaEditForm.fechaPago || null,
+        notas: cuotaEditForm.notas
+      });
+      setEditingCuota(null);
+      const res = await axios.get(`/api/ventas/${detalleVenta._id}`);
+      setDetalleVenta(res.data);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const startEditAnticipo = () => {
+    setAnticipioEditForm({
+      monto: detalleVenta.anticipo?.monto || 0,
+      pagado: detalleVenta.anticipo?.pagado || false,
+      fechaPago: detalleVenta.anticipo?.fechaPago ? detalleVenta.anticipo.fechaPago.slice(0, 10) : ''
+    });
+    setEditingAnticipo(true);
+  };
+
+  const handleSaveAnticipo = async () => {
+    try {
+      await axios.put(`/api/ventas/${detalleVenta._id}/anticipo-edit`, {
+        monto: parseFloat(anticipoEditForm.monto),
+        pagado: anticipoEditForm.pagado,
+        fechaPago: anticipoEditForm.fechaPago || null
+      });
+      setEditingAnticipo(false);
+      const res = await axios.get(`/api/ventas/${detalleVenta._id}`);
+      setDetalleVenta(res.data);
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -269,6 +337,7 @@ function Ventas() {
                     <td className="py-3 text-amber-600">{fmt(v.saldoPendiente)}</td>
                     <td className="py-3"><span className={`badge ${v.estado === 'escritura' ? 'badge-success' : 'badge-warning'}`}>{v.estado}</span></td>
                     <td className="py-3 text-right">
+                      <button onClick={() => openDetalle(v)} className="btn-secondary text-sm mr-2" title="Ver pagos"><Eye className="w-4 h-4" /></button>
                       <button onClick={() => handleEditVenta(v)} className="btn-secondary text-sm mr-2"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => { setSelectedVenta(v); setShowPagoModal(true); }} className="btn-secondary text-sm">Registrar Pago</button>
                     </td>
@@ -487,6 +556,137 @@ function Ventas() {
               <div><label className="block text-sm text-gray-600 mb-2">Anticipo (USD)</label><input type="number" value={editVentaForm.anticipo} onChange={(e) => setEditVentaForm({...editVentaForm, anticipo: e.target.value})} className="input-field" /></div>
               <button type="submit" className="w-full btn-primary justify-center">Guardar Cambios</button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Detalle / Historial de Pagos */}
+      {showDetalleModal && detalleVenta && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800">{detalleVenta.propiedad?.nombre || detalleVenta.propiedad?.codigo}</h3>
+                <p className="text-sm text-gray-500">
+                  {detalleVenta.cliente?.nombre}
+                  {(detalleVenta.coTitulares || []).length > 0 && ` + ${detalleVenta.coTitulares.map(ct => ct.nombre).join(', ')}`}
+                </p>
+              </div>
+              <button onClick={() => { setShowDetalleModal(false); setEditingCuota(null); setEditingAnticipo(false); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+
+            {/* Resumen */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-gray-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-gray-500 mb-1">Precio venta</p>
+                <p className="font-bold text-gray-800">{fmt(detalleVenta.precioVenta)}</p>
+              </div>
+              <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-gray-500 mb-1">Total pagado</p>
+                <p className="font-bold text-emerald-700">{fmt(detalleVenta.totalPagado)}</p>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-gray-500 mb-1">Pendiente</p>
+                <p className="font-bold text-amber-700">{fmt(detalleVenta.saldoPendiente)}</p>
+              </div>
+            </div>
+
+            {/* Anticipo */}
+            {detalleVenta.anticipo?.monto > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-700">Anticipo</h4>
+                  {!editingAnticipo && <button onClick={startEditAnticipo} className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"><Edit className="w-3.5 h-3.5" /> Editar</button>}
+                </div>
+                {editingAnticipo ? (
+                  <div className="border border-blue-200 rounded-xl p-4 bg-blue-50 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="block text-xs text-gray-600 mb-1">Monto</label><input type="number" value={anticipoEditForm.monto} onChange={e => setAnticipioEditForm(f => ({...f, monto: e.target.value}))} className="input-field text-sm" /></div>
+                      <div><label className="block text-xs text-gray-600 mb-1">Fecha pago</label><input type="date" value={anticipoEditForm.fechaPago} onChange={e => setAnticipioEditForm(f => ({...f, fechaPago: e.target.value}))} className="input-field text-sm" /></div>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={anticipoEditForm.pagado} onChange={e => setAnticipioEditForm(f => ({...f, pagado: e.target.checked}))} className="rounded" />
+                      <span className="text-sm text-gray-700">Marcado como pagado</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditingAnticipo(false)} className="flex-1 btn-secondary text-sm justify-center">Cancelar</button>
+                      <button onClick={handleSaveAnticipo} className="flex-1 btn-primary text-sm justify-center">Guardar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-600">Anticipo</span>
+                    <span className="font-medium">{fmt(detalleVenta.anticipo.monto)}</span>
+                    {detalleVenta.anticipo.pagado
+                      ? <span className="flex items-center gap-1 text-xs text-emerald-600"><CheckCircle className="w-3.5 h-3.5" /> Pagado {detalleVenta.anticipo.fechaPago ? new Date(detalleVenta.anticipo.fechaPago).toLocaleDateString() : ''}</span>
+                      : <span className="flex items-center gap-1 text-xs text-amber-600"><Clock className="w-3.5 h-3.5" /> Pendiente</span>
+                    }
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Cuotas */}
+            {detalleVenta.cuotas?.length > 0 && (
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Cuotas ({detalleVenta.cuotas.length})</h4>
+                <div className="space-y-2">
+                  {detalleVenta.cuotas.map(c => (
+                    <div key={c.numero}>
+                      {editingCuota === c.numero ? (
+                        <div className="border border-blue-200 rounded-xl p-4 bg-blue-50 space-y-3">
+                          <p className="text-sm font-medium text-gray-700">Editando cuota #{c.numero}</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><label className="block text-xs text-gray-600 mb-1">Monto cuota</label><input type="number" value={cuotaEditForm.monto} onChange={e => setCuotaEditForm(f => ({...f, monto: e.target.value}))} className="input-field text-sm" /></div>
+                            <div><label className="block text-xs text-gray-600 mb-1">Monto pagado</label><input type="number" value={cuotaEditForm.montoPagado} onChange={e => setCuotaEditForm(f => ({...f, montoPagado: e.target.value}))} className="input-field text-sm" /></div>
+                            <div><label className="block text-xs text-gray-600 mb-1">Vencimiento</label><input type="date" value={cuotaEditForm.fechaVencimiento} onChange={e => setCuotaEditForm(f => ({...f, fechaVencimiento: e.target.value}))} className="input-field text-sm" /></div>
+                            <div><label className="block text-xs text-gray-600 mb-1">Fecha de pago</label><input type="date" value={cuotaEditForm.fechaPago} onChange={e => setCuotaEditForm(f => ({...f, fechaPago: e.target.value}))} className="input-field text-sm" /></div>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                            <select value={cuotaEditForm.estado} onChange={e => setCuotaEditForm(f => ({...f, estado: e.target.value}))} className="input-field text-sm">
+                              <option value="pendiente">Pendiente</option>
+                              <option value="parcial">Parcial</option>
+                              <option value="pagada">Pagada</option>
+                              <option value="vencida">Vencida</option>
+                            </select>
+                          </div>
+                          <div><label className="block text-xs text-gray-600 mb-1">Notas</label><input type="text" value={cuotaEditForm.notas} onChange={e => setCuotaEditForm(f => ({...f, notas: e.target.value}))} className="input-field text-sm" placeholder="Comprobante, observación..." /></div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setEditingCuota(null)} className="flex-1 btn-secondary text-sm justify-center">Cancelar</button>
+                            <button onClick={handleSaveCuota} className="flex-1 btn-primary text-sm justify-center">Guardar</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${c.estado === 'pagada' ? 'bg-emerald-50 border-emerald-100' : c.estado === 'vencida' ? 'bg-rose-50 border-rose-100' : c.estado === 'parcial' ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
+                          <span className="text-sm font-mono text-gray-500 w-8">#{c.numero}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-gray-800 text-sm">{fmt(c.monto)}</span>
+                              {c.montoPagado > 0 && c.montoPagado < c.monto && <span className="text-xs text-blue-600">pagado: {fmt(c.montoPagado)}</span>}
+                              {c.fechaVencimiento && <span className="text-xs text-gray-400">vence {new Date(c.fechaVencimiento).toLocaleDateString()}</span>}
+                              {c.fechaPago && <span className="text-xs text-emerald-600">pagó {new Date(c.fechaPago).toLocaleDateString()}</span>}
+                              {c.notas && <span className="text-xs text-gray-400 italic truncate">{c.notas}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {c.estado === 'pagada' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+                            {c.estado === 'vencida' && <AlertCircle className="w-4 h-4 text-rose-500" />}
+                            {c.estado === 'parcial' && <Clock className="w-4 h-4 text-blue-500" />}
+                            {c.estado === 'pendiente' && <Clock className="w-4 h-4 text-gray-400" />}
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${c.estado === 'pagada' ? 'bg-emerald-100 text-emerald-700' : c.estado === 'vencida' ? 'bg-rose-100 text-rose-700' : c.estado === 'parcial' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{c.estado}</span>
+                            <button onClick={() => startEditCuota(c)} className="p-1 hover:bg-white/70 rounded"><Edit className="w-3.5 h-3.5 text-gray-400" /></button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detalleVenta.cuotas?.length === 0 && !detalleVenta.anticipo?.monto && (
+              <p className="text-center text-gray-400 py-6">Sin pagos registrados</p>
+            )}
           </div>
         </div>
       )}

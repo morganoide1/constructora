@@ -284,6 +284,55 @@ router.post('/:id/anticipo', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Editar cuota individual
+router.put('/:id/cuotas/:numero', auth, adminOnly, async (req, res) => {
+  try {
+    const { monto, montoPagado, estado, fechaVencimiento, fechaPago, notas } = req.body;
+    const venta = await Venta.findById(req.params.id);
+    if (!venta) return res.status(404).json({ error: 'Venta no encontrada' });
+
+    const cuota = venta.cuotas.find(c => c.numero === parseInt(req.params.numero));
+    if (!cuota) return res.status(404).json({ error: 'Cuota no encontrada' });
+
+    if (monto !== undefined) cuota.monto = monto;
+    if (montoPagado !== undefined) cuota.montoPagado = montoPagado;
+    if (estado) cuota.estado = estado;
+    if (fechaVencimiento !== undefined) cuota.fechaVencimiento = fechaVencimiento || null;
+    if (fechaPago !== undefined) cuota.fechaPago = fechaPago || null;
+    if (notas !== undefined) cuota.notas = notas;
+
+    // Recalcular totales
+    venta.totalPagado = venta.cuotas.reduce((s, c) => s + (c.montoPagado || 0), 0)
+      + (venta.anticipo?.pagado ? (venta.anticipo.monto || 0) : 0);
+
+    await venta.save();
+    res.json(venta);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Editar anticipo
+router.put('/:id/anticipo-edit', auth, adminOnly, async (req, res) => {
+  try {
+    const { monto, pagado, fechaPago } = req.body;
+    const venta = await Venta.findById(req.params.id);
+    if (!venta) return res.status(404).json({ error: 'Venta no encontrada' });
+
+    if (monto !== undefined) venta.anticipo.monto = monto;
+    if (pagado !== undefined) venta.anticipo.pagado = pagado;
+    if (fechaPago !== undefined) venta.anticipo.fechaPago = fechaPago || null;
+
+    venta.totalPagado = venta.cuotas.reduce((s, c) => s + (c.montoPagado || 0), 0)
+      + (venta.anticipo?.pagado ? (venta.anticipo.monto || 0) : 0);
+
+    await venta.save();
+    res.json(venta);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Dashboard de ventas
 router.get('/dashboard/stats', auth, adminOnly, async (req, res) => {
   try {
