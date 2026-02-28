@@ -392,8 +392,9 @@ function MiPortal() {
               </div>
               {p.propiedad.valorFuturo && (
                 <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                  <p className="text-xs text-gray-500 mb-1">Valor Futuro</p>
+                  <p className="text-xs text-gray-500 mb-1">Valor estimado</p>
                   <p className="text-xl font-bold text-emerald-600">{fmt(p.propiedad.valorFuturo)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 italic">según última venta / proyección de mercado</p>
                 </div>
               )}
               {p.propiedad.valorFuturo && p.precioVenta > 0 && (
