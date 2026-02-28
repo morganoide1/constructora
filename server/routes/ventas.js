@@ -150,32 +150,45 @@ router.put("/:id", auth, adminOnly, async (req, res) => {
 });
 
 
-// Registrar pago de cuota
+// Registrar pago de cuota (o pago libre sin cuota específica)
 router.post('/:id/pago', auth, adminOnly, async (req, res) => {
   try {
-    const { cuotaNumero, monto, cajaId, comprobante, notas } = req.body;
+    const { cuotaNumero, monto, cajaId, comprobante, notas, pagoLibre } = req.body;
 
     const venta = await Venta.findById(req.params.id).populate('propiedad');
     if (!venta) {
       return res.status(404).json({ error: 'Venta no encontrada' });
     }
 
-    // Buscar la cuota
-    const cuota = venta.cuotas.find(c => c.numero === cuotaNumero);
-    if (!cuota) {
-      return res.status(404).json({ error: 'Cuota no encontrada' });
-    }
+    let concepto;
 
-    // Actualizar cuota
-    cuota.montoPagado += monto;
-    cuota.comprobante = comprobante;
-    cuota.notas = notas;
-    
-    if (cuota.montoPagado >= cuota.monto) {
-      cuota.estado = 'pagada';
-      cuota.fechaPago = new Date();
+    if (pagoLibre) {
+      // Pago libre: acumular monto sin asociar a cuota específica
+      // Intentar aplicar al anticipo si no está pagado
+      if (venta.anticipo?.monto > 0 && !venta.anticipo.pagado) {
+        venta.anticipo.pagado = true;
+        venta.anticipo.fechaPago = new Date();
+      }
+      concepto = notas || `Pago libre - ${venta.propiedad.nombre}`;
     } else {
-      cuota.estado = 'parcial';
+      // Buscar la cuota
+      const cuota = venta.cuotas.find(c => c.numero === cuotaNumero);
+      if (!cuota) {
+        return res.status(404).json({ error: 'Cuota no encontrada' });
+      }
+
+      // Actualizar cuota
+      cuota.montoPagado += monto;
+      cuota.comprobante = comprobante;
+      cuota.notas = notas;
+
+      if (cuota.montoPagado >= cuota.monto) {
+        cuota.estado = 'pagada';
+        cuota.fechaPago = new Date();
+      } else {
+        cuota.estado = 'parcial';
+      }
+      concepto = `Pago cuota ${cuotaNumero} - ${venta.propiedad.nombre}`;
     }
 
     // Actualizar total pagado de la venta
@@ -193,7 +206,7 @@ router.post('/:id/pago', auth, adminOnly, async (req, res) => {
           caja: cajaId,
           tipo: 'ingreso',
           monto,
-          concepto: `Pago cuota ${cuotaNumero} - ${venta.propiedad.nombre}`,
+          concepto,
           venta: venta._id,
           usuario: req.user._id,
           notas

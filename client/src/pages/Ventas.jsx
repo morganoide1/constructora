@@ -20,8 +20,8 @@ function Ventas() {
   const [edificioLinkForm, setEdificioLinkForm] = useState({ linkPagoAutomatico: '', linkPagoMomento: '' });
   const [selectedVenta, setSelectedVenta] = useState(null);
   const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
-  const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, cuotasNum: 12 });
-  const [pagoForm, setPagoForm] = useState({ cuotaNumero: '', monto: '', cajaId: '' });
+  const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, modalidad: 'cuotas', cuotasNum: 12 });
+  const [pagoForm, setPagoForm] = useState({ tipoPago: 'cuota', cuotaNumero: '', monto: '', cajaId: '', notas: '' });
   const [editVentaForm, setEditVentaForm] = useState({ precioVenta: '', anticipo: '' });
 
   useEffect(() => { fetchData(); }, []);
@@ -74,13 +74,16 @@ function Ventas() {
     try {
       const precio = parseFloat(ventaForm.precioVenta);
       const anticipo = parseFloat(ventaForm.anticipo.monto) || 0;
-      const numCuotas = parseInt(ventaForm.cuotasNum);
-      const saldoFinanciar = precio - anticipo;
-      const montoCuota = saldoFinanciar / numCuotas;
-      const cuotas = Array.from({ length: numCuotas }, (_, i) => ({ numero: i + 1, monto: montoCuota, fechaVencimiento: new Date(Date.now() + (i + 1) * 30 * 24 * 60 * 60 * 1000) }));
-      await axios.post('/api/ventas', { propiedadId: ventaForm.propiedadId, clienteId: ventaForm.clienteId, precioVenta: precio, anticipo: { monto: anticipo, pagado: false }, cuotas });
+      let cuotas = [];
+      if (ventaForm.modalidad === 'cuotas') {
+        const numCuotas = parseInt(ventaForm.cuotasNum);
+        const saldoFinanciar = precio - anticipo;
+        const montoCuota = saldoFinanciar / numCuotas;
+        cuotas = Array.from({ length: numCuotas }, (_, i) => ({ numero: i + 1, monto: montoCuota, fechaVencimiento: new Date(Date.now() + (i + 1) * 30 * 24 * 60 * 60 * 1000) }));
+      }
+      await axios.post('/api/ventas', { propiedadId: ventaForm.propiedadId, clienteId: ventaForm.clienteId, precioVenta: precio, anticipo: { monto: anticipo, pagado: ventaForm.modalidad === 'contado' }, cuotas });
       setShowVentaModal(false);
-      setVentaForm({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, cuotasNum: 12 });
+      setVentaForm({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, modalidad: 'cuotas', cuotasNum: 12 });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -90,9 +93,19 @@ function Ventas() {
   const handlePago = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/ventas/${selectedVenta._id}/pago`, { cuotaNumero: parseInt(pagoForm.cuotaNumero), monto: parseFloat(pagoForm.monto), cajaId: pagoForm.cajaId || undefined });
+      const payload = {
+        monto: parseFloat(pagoForm.monto),
+        cajaId: pagoForm.cajaId || undefined,
+        notas: pagoForm.notas || undefined,
+      };
+      if (pagoForm.tipoPago === 'libre') {
+        payload.pagoLibre = true;
+      } else {
+        payload.cuotaNumero = parseInt(pagoForm.cuotaNumero);
+      }
+      await axios.post(`/api/ventas/${selectedVenta._id}/pago`, payload);
       setShowPagoModal(false);
-      setPagoForm({ cuotaNumero: '', monto: '', cajaId: '' });
+      setPagoForm({ tipoPago: 'cuota', cuotaNumero: '', monto: '', cajaId: '', notas: '' });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Error');
@@ -292,11 +305,36 @@ function Ventas() {
             <form onSubmit={handleVenta} className="space-y-4">
               <div><label className="block text-sm text-gray-600 mb-2">Propiedad</label><select value={ventaForm.propiedadId} onChange={(e) => setVentaForm({...ventaForm, propiedadId: e.target.value})} className="input-field" required><option value="">Seleccionar...</option>{propiedades.filter(p => p.estado === 'disponible').map(p => <option key={p._id} value={p._id}>{p.codigo} - {p.nombre}</option>)}</select></div>
               <div><label className="block text-sm text-gray-600 mb-2">Cliente</label><select value={ventaForm.clienteId} onChange={(e) => setVentaForm({...ventaForm, clienteId: e.target.value})} className="input-field" required><option value="">Seleccionar...</option>{clientes.map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}</select></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-600 mb-2">Precio (USD)</label><input type="number" value={ventaForm.precioVenta} onChange={(e) => setVentaForm({...ventaForm, precioVenta: e.target.value})} className="input-field" required /></div>
-                <div><label className="block text-sm text-gray-600 mb-2">Anticipo</label><input type="number" value={ventaForm.anticipo.monto} onChange={(e) => setVentaForm({...ventaForm, anticipo: { monto: e.target.value }})} className="input-field" /></div>
+              <div><label className="block text-sm text-gray-600 mb-2">Precio de venta (USD)</label><input type="number" value={ventaForm.precioVenta} onChange={(e) => setVentaForm({...ventaForm, precioVenta: e.target.value})} className="input-field" required /></div>
+              {/* Modalidad de pago */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Modalidad de pago</label>
+                <div className="flex gap-2">
+                  {[{ v: 'contado', label: 'Contado' }, { v: 'cuotas', label: 'En cuotas' }].map(opt => (
+                    <button key={opt.v} type="button"
+                      onClick={() => setVentaForm(f => ({ ...f, modalidad: opt.v }))}
+                      className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${ventaForm.modalidad === opt.v ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'}`}
+                    >{opt.label}</button>
+                  ))}
+                </div>
               </div>
-              <div><label className="block text-sm text-gray-600 mb-2">Cuotas</label><input type="number" value={ventaForm.cuotasNum} onChange={(e) => setVentaForm({...ventaForm, cuotasNum: e.target.value})} className="input-field" min="1" max="120" /></div>
+              {ventaForm.modalidad === 'contado' ? (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Monto pagado al contado (USD)</label>
+                  <input type="number" value={ventaForm.anticipo.monto} onChange={(e) => setVentaForm({...ventaForm, anticipo: { monto: e.target.value }})} className="input-field" placeholder="Igual al precio de venta si es pago total" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="block text-sm text-gray-600 mb-2">Anticipo (USD)</label><input type="number" value={ventaForm.anticipo.monto} onChange={(e) => setVentaForm({...ventaForm, anticipo: { monto: e.target.value }})} className="input-field" placeholder="0" /></div>
+                  <div><label className="block text-sm text-gray-600 mb-2">Cantidad de cuotas</label><input type="number" value={ventaForm.cuotasNum} onChange={(e) => setVentaForm({...ventaForm, cuotasNum: e.target.value})} className="input-field" min="1" max="120" /></div>
+                </div>
+              )}
+              {ventaForm.modalidad === 'cuotas' && ventaForm.precioVenta && (
+                <div className="px-4 py-3 bg-green-50 rounded-xl border border-green-200 text-sm">
+                  <div className="flex justify-between text-gray-600"><span>Saldo a financiar:</span><span className="font-medium">{fmt((parseFloat(ventaForm.precioVenta) || 0) - (parseFloat(ventaForm.anticipo.monto) || 0))}</span></div>
+                  {ventaForm.cuotasNum > 0 && <div className="flex justify-between text-gray-600 mt-1"><span>Cuota estimada:</span><span className="font-medium">{fmt(((parseFloat(ventaForm.precioVenta) || 0) - (parseFloat(ventaForm.anticipo.monto) || 0)) / (parseInt(ventaForm.cuotasNum) || 1))}</span></div>}
+                </div>
+              )}
               <button type="submit" className="w-full btn-primary justify-center">Registrar Venta</button>
             </form>
           </div>
@@ -307,15 +345,53 @@ function Ventas() {
       {showPagoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-gray-800">Registrar Pago</h3>
               <button onClick={() => setShowPagoModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
             </div>
-            <p className="text-gray-500 mb-4">Venta: <span className="text-gray-800">{selectedVenta?.propiedad?.nombre}</span></p>
+            <p className="text-gray-500 mb-4 text-sm">Propiedad: <span className="text-gray-800 font-medium">{selectedVenta?.propiedad?.nombre}</span></p>
             <form onSubmit={handlePago} className="space-y-4">
-              <div><label className="block text-sm text-gray-600 mb-2">Cuota</label><select value={pagoForm.cuotaNumero} onChange={(e) => setPagoForm({...pagoForm, cuotaNumero: e.target.value})} className="input-field" required><option value="">Seleccionar...</option>{selectedVenta?.cuotas?.filter(c => c.estado === 'pendiente').map(c => <option key={c.numero} value={c.numero}>Cuota {c.numero} - {fmt(c.monto)}</option>)}</select></div>
-              <div><label className="block text-sm text-gray-600 mb-2">Monto</label><input type="number" value={pagoForm.monto} onChange={(e) => setPagoForm({...pagoForm, monto: e.target.value})} className="input-field" required /></div>
-              <div><label className="block text-sm text-gray-600 mb-2">Depositar en Caja</label><select value={pagoForm.cajaId} onChange={(e) => setPagoForm({...pagoForm, cajaId: e.target.value})} className="input-field"><option value="">No registrar</option>{cajas.filter(c => c.tipo === 'USD').map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}</select></div>
+              {/* Tipo de pago */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Tipo de pago</label>
+                <div className="flex gap-2">
+                  {[{ v: 'cuota', label: 'Cuota específica' }, { v: 'libre', label: 'Pago libre / anticipo' }].map(opt => (
+                    <button key={opt.v} type="button"
+                      onClick={() => setPagoForm(f => ({ ...f, tipoPago: opt.v, cuotaNumero: '' }))}
+                      className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${pagoForm.tipoPago === opt.v ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'}`}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {pagoForm.tipoPago === 'cuota' ? (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Cuota</label>
+                  {selectedVenta?.cuotas?.filter(c => c.estado !== 'pagada').length > 0 ? (
+                    <select value={pagoForm.cuotaNumero} onChange={(e) => {
+                      const cuota = selectedVenta.cuotas.find(c => c.numero === parseInt(e.target.value));
+                      setPagoForm(f => ({ ...f, cuotaNumero: e.target.value, monto: cuota ? cuota.monto : f.monto }));
+                    }} className="input-field" required>
+                      <option value="">Seleccionar cuota...</option>
+                      {selectedVenta.cuotas.filter(c => c.estado !== 'pagada').map(c => (
+                        <option key={c.numero} value={c.numero}>
+                          Cuota {c.numero} — {fmt(c.monto)}{c.estado === 'vencida' ? ' ⚠ Vencida' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-emerald-600 p-3 bg-emerald-50 rounded-xl">No hay cuotas pendientes</p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Descripción (opcional)</label>
+                  <input type="text" value={pagoForm.notas} onChange={(e) => setPagoForm(f => ({ ...f, notas: e.target.value }))} className="input-field" placeholder="Ej: Anticipo, adelanto cuotas 5-7, seña..." />
+                </div>
+              )}
+
+              <div><label className="block text-sm text-gray-600 mb-2">Monto (USD)</label><input type="number" value={pagoForm.monto} onChange={(e) => setPagoForm({...pagoForm, monto: e.target.value})} className="input-field" required placeholder="0" /></div>
+              <div><label className="block text-sm text-gray-600 mb-2">Depositar en Caja</label><select value={pagoForm.cajaId} onChange={(e) => setPagoForm({...pagoForm, cajaId: e.target.value})} className="input-field"><option value="">No registrar en caja</option>{cajas.filter(c => c.tipo === 'USD').map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}</select></div>
               <button type="submit" className="w-full btn-primary justify-center">Registrar Pago</button>
             </form>
           </div>
