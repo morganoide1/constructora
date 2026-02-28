@@ -161,6 +161,7 @@ router.post('/:id/pago', auth, adminOnly, async (req, res) => {
     }
 
     let concepto;
+    let cuota;
 
     if (pagoLibre) {
       // Pago libre: acumular monto sin asociar a cuota específica
@@ -172,7 +173,7 @@ router.post('/:id/pago', auth, adminOnly, async (req, res) => {
       concepto = notas || `Pago libre - ${venta.propiedad.nombre}`;
     } else {
       // Buscar la cuota
-      const cuota = venta.cuotas.find(c => c.numero === cuotaNumero);
+      cuota = venta.cuotas.find(c => c.numero === cuotaNumero);
       if (!cuota) {
         return res.status(404).json({ error: 'Cuota no encontrada' });
       }
