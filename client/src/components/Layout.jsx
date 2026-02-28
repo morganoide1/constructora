@@ -12,6 +12,7 @@ import {
   Megaphone,
   Calendar,
   Wrench,
+  Percent,
   LogOut,
   Menu,
   X
@@ -30,6 +31,7 @@ const navItems = [
   { path: '/anuncios', icon: Megaphone, label: 'Anuncios' },
   { path: '/reservas', icon: Calendar, label: 'Reservas' },
   { path: '/mantenimiento', icon: Wrench, label: 'Mantenimiento' },
+  { path: '/planes', icon: Percent, label: 'Planes Adelanto' },
 ];
 
 function Layout() {

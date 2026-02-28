@@ -15,6 +15,7 @@ import Denuncias from './pages/Denuncias';
 import Anuncios from './pages/Anuncios';
 import Reservas from './pages/Reservas';
 import Mantenimiento from './pages/Mantenimiento';
+import Planes from './pages/Planes';
 import MiPortal from './pages/MiPortal';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -78,6 +79,7 @@ function App() {
         <Route path="anuncios" element={<Anuncios />} />
         <Route path="reservas" element={<Reservas />} />
         <Route path="mantenimiento" element={<Mantenimiento />} />
+        <Route path="planes" element={<Planes />} />
       </Route>
 
       {/* Portal Cliente */}

@@ -1,8 +1,109 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar, Users, Wrench } from 'lucide-react';
+import { Building2, LogOut, CheckCircle, Clock, AlertCircle, FolderOpen, Gift, Briefcase, ExternalLink, Receipt, Plus, Trash2, Upload, FileText, ChevronLeft, ChevronRight, AlertTriangle, MessageCircle, Megaphone, ThumbsUp, Calendar, Users, Wrench, Percent } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+function PlanAdelantoCalc({ pendientes, planes, fmt }) {
+  const [n, setN] = useState(1);
+  const max = pendientes.length;
+  const seleccionadas = pendientes.slice(0, n);
+  const subtotal = seleccionadas.reduce((s, c) => s + (c.monto || 0), 0);
+  const moneda = seleccionadas[0]?.moneda || 'USD';
+
+  // Mejor plan aplicable: mayor descuento con cuotasMinimas <= n
+  const mejorPlan = planes
+    .filter(pl => pl.cuotasMinimas <= n && (!pl.edificio || true))
+    .sort((a, b) => b.descuento - a.descuento)[0] || null;
+
+  const descuento = mejorPlan ? Math.round(subtotal * mejorPlan.descuento / 100) : 0;
+  const total = subtotal - descuento;
+
+  return (
+    <div className="mt-5 p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200">
+      <div className="flex items-center gap-2 mb-3">
+        <Percent className="w-4 h-4 text-amber-600" />
+        <h5 className="font-semibold text-gray-800 text-sm">Calculador de adelanto de cuotas</h5>
+      </div>
+
+      {/* Slider */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs text-gray-500">¿Cuántas cuotas querés adelantar?</label>
+          <span className="text-sm font-bold text-amber-700">{n} cuota{n !== 1 ? 's' : ''}</span>
+        </div>
+        <input
+          type="range"
+          min="1"
+          max={max}
+          value={n}
+          onChange={e => setN(parseInt(e.target.value))}
+          className="w-full accent-amber-500"
+        />
+        <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+          <span>1</span><span>{max}</span>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Cuota{seleccionadas.length > 1 ? 's' : ''} {seleccionadas.map(c => c.numero).join(', ')}
+        </p>
+      </div>
+
+      {/* Resultado */}
+      <div className="space-y-1.5 text-sm">
+        <div className="flex justify-between text-gray-600">
+          <span>Subtotal ({n} cuotas)</span>
+          <span className="font-medium">{fmt(subtotal, moneda)}</span>
+        </div>
+        {mejorPlan ? (
+          <>
+            <div className="flex justify-between text-emerald-700">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                {mejorPlan.titulo} (–{mejorPlan.descuento}%)
+              </span>
+              <span className="font-medium">–{fmt(descuento, moneda)}</span>
+            </div>
+            <div className="flex justify-between font-bold text-gray-800 border-t border-amber-200 pt-1.5">
+              <span>Total a pagar</span>
+              <span className="text-emerald-700 text-base">{fmt(total, moneda)}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-gray-400 italic">
+            {planes.length > 0
+              ? `Necesitás al menos ${Math.min(...planes.map(p => p.cuotasMinimas))} cuotas para aplicar un descuento`
+              : 'Sin descuento aplicable'}
+          </p>
+        )}
+      </div>
+
+      {/* Planes disponibles */}
+      <div className="mt-4 pt-3 border-t border-amber-200">
+        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Planes disponibles</p>
+        <div className="space-y-1.5">
+          {planes.map(pl => (
+            <div key={pl._id} className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs ${
+              mejorPlan?._id === pl._id ? 'bg-emerald-100 border border-emerald-300' : 'bg-white border border-amber-100'
+            }`}>
+              <span className="font-medium text-gray-700">{pl.titulo}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-gray-500">{pl.cuotasMinimas}+ cuotas</span>
+                <span className={`font-bold px-1.5 py-0.5 rounded ${mejorPlan?._id === pl._id ? 'text-emerald-700 bg-emerald-50' : 'text-amber-700 bg-amber-50'}`}>
+                  {pl.descuento}% off
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {mejorPlan && (
+          <p className="mt-3 text-xs text-gray-500 text-center">
+            Para gestionar este adelanto, comunicate con nosotros mencionando el plan <strong>{mejorPlan.titulo}</strong>.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function MiPortal() {
   const [propiedades, setPropiedades] = useState([]);
@@ -22,6 +123,7 @@ function MiPortal() {
   const [fechasBloqueadas, setFechasBloqueadas] = useState([]);
   const [misReservas, setMisReservas] = useState([]);
   const [mantenimientos, setMantenimientos] = useState([]);
+  const [planesAdelanto, setPlanesAdelanto] = useState([]);
   const [estadoEdificio, setEstadoEdificio] = useState([]);
   const [estadoMes, setEstadoMes] = useState(new Date().getMonth() + 1);
   const [estadoAnio, setEstadoAnio] = useState(new Date().getFullYear());
@@ -43,7 +145,7 @@ function MiPortal() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, vecinosRes, espaciosRes, misReservasRes, mantRes] = await Promise.all([
+      const [propsRes, anunciosRes, beneficiosRes, edificiosRes, gastosRes, misPropRes, expensasRes, denunciasRes, vecinosRes, espaciosRes, misReservasRes, mantRes, planesRes] = await Promise.all([
         axios.get('/api/clientes/mi-portal/propiedades'),
         axios.get('/api/anuncios').catch(() => ({ data: [] })),
         axios.get('/api/beneficios').catch(() => ({ data: [] })),
@@ -55,7 +157,8 @@ function MiPortal() {
         axios.get('/api/denuncias/vecinos').catch(() => ({ data: [] })),
         axios.get('/api/espacios').catch(() => ({ data: [] })),
         axios.get('/api/reservas/mis-reservas').catch(() => ({ data: [] })),
-        axios.get('/api/mantenimiento').catch(() => ({ data: [] }))
+        axios.get('/api/mantenimiento').catch(() => ({ data: [] })),
+        axios.get('/api/planes').catch(() => ({ data: [] }))
       ]);
       setPropiedades(propsRes.data);
       setAnuncios(anunciosRes.data.map(a => ({
@@ -77,6 +180,7 @@ function MiPortal() {
       setMisReservas(misReservasRes.data);
       if (espList.length > 0 && !espacioSeleccionado) setEspacioSeleccionado(espList[0]._id);
       setMantenimientos(mantRes.data);
+      setPlanesAdelanto(planesRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -338,6 +442,12 @@ function MiPortal() {
                 ))}
               </div>
             </div>
+            {/* Calculador de planes de adelanto */}
+            {planesAdelanto.length > 0 && (() => {
+              const pendientes = p.cuotas.filter(c => c.estado === 'pendiente').sort((a, b) => a.numero - b.numero);
+              if (pendientes.length === 0) return null;
+              return <PlanAdelantoCalc pendientes={pendientes} planes={planesAdelanto} fmt={fmt} />;
+            })()}
           </div>
         ))}
 
