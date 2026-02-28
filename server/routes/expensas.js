@@ -2,8 +2,68 @@ const express = require('express');
 const router = express.Router();
 const Expensa = require('../models/Expensa');
 const Venta = require('../models/Venta');
+const Propiedad = require('../models/Propiedad');
 const { auth, adminOnly } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+
+// Admin: estado de pago por edificio/periodo (para mostrar verde/rojo por depto)
+router.get('/por-edificio', auth, adminOnly, async (req, res) => {
+  try {
+    const { edificio, mes, año } = req.query;
+    if (!edificio || !mes || !año) return res.json([]);
+    const props = await Propiedad.find({ edificio }).select('_id nombre codigo ubicacion');
+    const propIds = props.map(p => p._id);
+    const expensas = await Expensa.find({
+      propiedad: { $in: propIds },
+      'periodo.mes': parseInt(mes),
+      'periodo.año': parseInt(año)
+    }).select('propiedad estado');
+    const estadoMap = {};
+    expensas.forEach(e => { estadoMap[e.propiedad.toString()] = e.estado; });
+    res.json(props.map(p => ({
+      propiedadId: p._id,
+      nombre: p.nombre || p.codigo,
+      ubicacion: p.ubicacion,
+      estado: estadoMap[p._id.toString()] || null
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Cliente: estado del edificio — quién pagó y quién no (sin montos ajenos)
+router.get('/estado-edificio', auth, async (req, res) => {
+  try {
+    const { mes, año } = req.query;
+    const ventas = await Venta.find({ cliente: req.user._id }).populate({ path: 'propiedad', select: 'edificio' });
+    const edificioIds = [...new Set(ventas.filter(v => v.propiedad?.edificio).map(v => v.propiedad.edificio.toString()))];
+    if (edificioIds.length === 0) return res.json([]);
+
+    const props = await Propiedad.find({ edificio: { $in: edificioIds } })
+      .select('nombre codigo edificio ubicacion')
+      .populate('edificio', 'nombre');
+
+    const expensas = await Expensa.find({
+      propiedad: { $in: props.map(p => p._id) },
+      'periodo.mes': parseInt(mes),
+      'periodo.año': parseInt(año)
+    }).select('propiedad estado');
+
+    const estadoMap = {};
+    expensas.forEach(e => { estadoMap[e.propiedad.toString()] = e.estado; });
+
+    res.json(props.map(p => ({
+      propiedadId: p._id,
+      nombre: p.nombre || p.codigo,
+      ubicacion: p.ubicacion,
+      edificioId: p.edificio?._id,
+      edificioNombre: p.edificio?.nombre,
+      estado: estadoMap[p._id.toString()] || null
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Admin: Obtener todas las expensas
 router.get('/', auth, adminOnly, async (req, res) => {

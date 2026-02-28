@@ -22,6 +22,9 @@ function MiPortal() {
   const [fechasBloqueadas, setFechasBloqueadas] = useState([]);
   const [misReservas, setMisReservas] = useState([]);
   const [mantenimientos, setMantenimientos] = useState([]);
+  const [estadoEdificio, setEstadoEdificio] = useState([]);
+  const [estadoMes, setEstadoMes] = useState(new Date().getMonth() + 1);
+  const [estadoAnio, setEstadoAnio] = useState(new Date().getFullYear());
   const [showReservaModal, setShowReservaModal] = useState(false);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [notasReserva, setNotasReserva] = useState('');
@@ -80,6 +83,13 @@ function MiPortal() {
       setLoading(false);
     }
   };
+
+  // Fetch estado del edificio cuando cambia mes/año
+  useEffect(() => {
+    axios.get('/api/expensas/estado-edificio', { params: { mes: estadoMes, año: estadoAnio } })
+      .then(res => setEstadoEdificio(res.data))
+      .catch(() => setEstadoEdificio([]));
+  }, [estadoMes, estadoAnio]);
 
   // Fetch disponibilidad cuando cambia espacio o mes
   useEffect(() => {
@@ -464,6 +474,95 @@ function MiPortal() {
               })}
             </div>
           ) : <p className="text-gray-400 text-center py-8">No tienes expensas</p>}
+        </div>
+
+        {/* Estado del Edificio — quién pagó y quién debe */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-green-100"><Building2 className="w-6 h-6 text-green-600" /></div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Estado del Edificio</h2>
+                <p className="text-sm text-gray-500">Quién está al día y quién debe expensas</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={estadoMes}
+                onChange={e => setEstadoMes(parseInt(e.target.value))}
+                className="input-field py-1.5 text-sm"
+              >
+                {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m, i) => (
+                  <option key={i} value={i+1}>{m}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={estadoAnio}
+                onChange={e => setEstadoAnio(parseInt(e.target.value))}
+                className="input-field py-1.5 text-sm w-20"
+              />
+            </div>
+          </div>
+          {estadoEdificio.length === 0 ? (
+            <p className="text-gray-400 text-center py-6">Sin datos para ese período</p>
+          ) : (() => {
+            const agrupados = estadoEdificio.reduce((acc, u) => {
+              const key = u.edificioId || 'sin';
+              const label = u.edificioNombre || 'Edificio';
+              if (!acc[key]) acc[key] = { label, items: [] };
+              acc[key].items.push(u);
+              return acc;
+            }, {});
+            const totalPorEdificio = Object.values(agrupados).map(g => ({
+              label: g.label,
+              total: g.items.length,
+              pagados: g.items.filter(u => u.estado === 'pagada').length,
+              deben: g.items.filter(u => u.estado === 'pendiente').length,
+              items: g.items
+            }));
+            return (
+              <div className="space-y-5">
+                {totalPorEdificio.map((g, gi) => (
+                  <div key={gi}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{g.label}</p>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {g.pagados} al día
+                        </span>
+                        <span className="flex items-center gap-1 text-rose-600 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> {g.deben} deben
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {g.items.map(u => (
+                        <div
+                          key={u.propiedadId}
+                          className={`px-3 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-2 ${
+                            u.estado === 'pagada'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                              : u.estado === 'pendiente'
+                              ? 'bg-rose-50 border-rose-200 text-rose-800'
+                              : 'bg-gray-50 border-gray-200 text-gray-400'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                            u.estado === 'pagada' ? 'bg-emerald-500' : u.estado === 'pendiente' ? 'bg-rose-500' : 'bg-gray-300'
+                          }`} />
+                          <span className="truncate">{u.nombre}</span>
+                          {u.ubicacion?.piso && (
+                            <span className="text-xs opacity-60 ml-auto flex-shrink-0">P{u.ubicacion.piso}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Gastos */}

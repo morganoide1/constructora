@@ -16,6 +16,7 @@ function TabLiquidaciones({ edificios }) {
   const [saving, setSaving] = useState(false);
   const [liquidando, setLiquidando] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [estadosDepto, setEstadosDepto] = useState({});  // propiedadId → estado
 
   // Cargar liquidacion cuando cambia edificio/mes/año
   useEffect(() => {
@@ -28,6 +29,14 @@ function TabLiquidaciones({ edificios }) {
     axios.get(`/api/ventas/propiedades?edificio=${edificio}`)
       .then(r => setProps(r.data))
       .catch(() => setProps([]));
+    // Cargar estados de pago por depto
+    axios.get('/api/expensas/por-edificio', { params: { edificio, mes, año } })
+      .then(r => {
+        const map = {};
+        r.data.forEach(e => { map[e.propiedadId] = e.estado; });
+        setEstadosDepto(map);
+      })
+      .catch(() => setEstadosDepto({}));
   }, [edificio, mes, año]);
 
   const montoTotal = (liq?.gastos || []).reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
@@ -79,6 +88,10 @@ function TabLiquidaciones({ edificios }) {
       const res = await axios.post(`/api/liquidaciones/${liq._id}/liquidar`);
       setResultado(res.data);
       setLiq(prev => ({ ...prev, estado: 'liquidada' }));
+      // Refrescar estados de pago
+      axios.get('/api/expensas/por-edificio', { params: { edificio, mes, año } })
+        .then(r => { const map = {}; r.data.forEach(e => { map[e.propiedadId] = e.estado; }); setEstadosDepto(map); })
+        .catch(() => {});
     } catch (err) {
       alert(err.response?.data?.error || 'Error al liquidar');
     } finally {
@@ -263,6 +276,7 @@ function TabLiquidaciones({ edificios }) {
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
                         <th className="px-4 py-2 text-left text-gray-500 font-medium text-xs">Unidad</th>
+                        <th className="px-4 py-2 text-center text-gray-500 font-medium text-xs">Estado</th>
                         <th className="px-4 py-2 text-center text-gray-500 font-medium text-xs">Coef %</th>
                         <th className="px-4 py-2 text-right text-gray-500 font-medium text-xs">Monto</th>
                       </tr>
@@ -272,11 +286,29 @@ function TabLiquidaciones({ edificios }) {
                         const montoProp = montoTotal > 0 && p.coeficiente > 0
                           ? Math.round(montoTotal * p.coeficiente / 100)
                           : 0;
+                        const estadoPago = estadosDepto[p._id];
                         return (
                           <tr key={p._id} className="hover:bg-gray-50">
-                            <td className="px-4 py-2.5 text-gray-800 font-medium">
-                              {p.nombre || p.codigo}
+                            <td className="px-4 py-2.5 font-medium">
+                              <span className={estadoPago === 'pagada' ? 'text-emerald-700' : estadoPago === 'pendiente' ? 'text-rose-600' : 'text-gray-800'}>
+                                {p.nombre || p.codigo}
+                              </span>
                               {p.ubicacion?.piso && <span className="text-gray-400 text-xs ml-1">P{p.ubicacion.piso} U{p.ubicacion.unidad}</span>}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              {estadoPago === 'pagada' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Al día
+                                </span>
+                              )}
+                              {estadoPago === 'pendiente' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-medium">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Debe
+                                </span>
+                              )}
+                              {!estadoPago && (
+                                <span className="text-gray-300 text-xs">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-2.5 text-center">
                               <input
