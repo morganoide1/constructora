@@ -139,6 +139,9 @@ function MiPortal() {
   const navigate = useNavigate();
   const proyectosRef = useRef(null);
   const beneficiosRef = useRef(null);
+  const anunciosRef = useRef(null);
+  const gastosRef = useRef(null);
+  const mantRef = useRef(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -345,7 +348,7 @@ function MiPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <header className="bg-white border-b border-green-200 shadow-sm">
+      <header className="sticky top-0 z-40 bg-white border-b border-green-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden">
@@ -458,43 +461,36 @@ function MiPortal() {
           </div>
         )}
 
-        {/* Anuncios */}
+        {/* Anuncios — Carrusel */}
         {anuncios.length > 0 && (
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-100">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-xl bg-blue-100"><Megaphone className="w-6 h-6 text-blue-600" /></div>
-              <h2 className="text-xl font-bold text-gray-800">Anuncios</h2>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-blue-100"><Megaphone className="w-6 h-6 text-blue-600" /></div>
+                <h2 className="text-xl font-bold text-gray-800">Anuncios</h2>
+              </div>
+              {anuncios.length > 1 && (
+                <div className="flex gap-2">
+                  <button onClick={() => scroll(anunciosRef, 'left')} className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"><ChevronLeft className="w-5 h-5" /></button>
+                  <button onClick={() => scroll(anunciosRef, 'right')} className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"><ChevronRight className="w-5 h-5" /></button>
+                </div>
+              )}
             </div>
-            <div className="space-y-4">
+            <div ref={anunciosRef} className="flex gap-4 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: 'none' }}>
               {anuncios.map((a) => {
                 const liked = a._liked || false;
                 const likeCount = a.likes?.length || 0;
                 return (
-                  <div key={a._id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h4 className="font-semibold text-gray-800">{a.titulo}</h4>
-                          {a.edificio && (
-                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-200 text-blue-800">{a.edificio.nombre}</span>
-                          )}
-                        </div>
-                        <p className="text-gray-500 text-xs mb-2">{new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{a.contenido}</p>
-                        {a.imagen && (
-                          <img src={a.imagen} alt={a.titulo} className="mt-3 w-full object-contain rounded-lg bg-gray-50" />
-                        )}
-                      </div>
+                  <div key={a._id} className="flex-shrink-0 w-80 p-4 bg-blue-50 rounded-xl border border-blue-200 snap-start flex flex-col">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h4 className="font-semibold text-gray-800 text-sm">{a.titulo}</h4>
+                      {a.edificio && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-200 text-blue-800">{a.edificio.nombre}</span>}
                     </div>
+                    <p className="text-gray-400 text-xs mb-2">{new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    {a.imagen && <img src={a.imagen} alt={a.titulo} className="w-full object-contain rounded-lg bg-gray-50 mb-2 max-h-32" />}
+                    <p className="text-gray-700 text-sm flex-1 line-clamp-4">{a.contenido}</p>
                     <div className="flex justify-end mt-3">
-                      <button
-                        onClick={() => handleLike(a._id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                          liked
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
-                        }`}
-                      >
+                      <button onClick={() => handleLike(a._id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${liked ? 'bg-green-100 text-green-700' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}>
                         <ThumbsUp className={`w-4 h-4 ${liked ? 'fill-green-600 text-green-600' : ''}`} />
                         {likeCount}
                       </button>
@@ -675,26 +671,32 @@ function MiPortal() {
           })()}
         </div>
 
-        {/* Gastos */}
+        {/* Gastos — Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-rose-100"><Receipt className="w-6 h-6 text-rose-600" /></div>
               <h2 className="text-xl font-bold text-gray-800">Mis Gastos</h2>
             </div>
-            <button onClick={() => setShowGastoModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Agregar</button>
+            <div className="flex items-center gap-2">
+              {gastos.length > 2 && (
+                <>
+                  <button onClick={() => scroll(gastosRef, 'left')} className="p-2 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700"><ChevronLeft className="w-5 h-5" /></button>
+                  <button onClick={() => scroll(gastosRef, 'right')} className="p-2 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700"><ChevronRight className="w-5 h-5" /></button>
+                </>
+              )}
+              <button onClick={() => setShowGastoModal(true)} className="btn-primary text-sm"><Plus className="w-4 h-4" /> Agregar</button>
+            </div>
           </div>
           {gastos.length > 0 ? (
-            <div className="space-y-3">
+            <div ref={gastosRef} className="flex gap-3 overflow-x-auto pb-2 snap-x" style={{ scrollbarWidth: 'none' }}>
               {gastos.map((g) => (
-                <div key={g._id} className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div>
-                    <span className={`px-2 py-1 rounded-full text-xs ${g.tipo === 'expensas' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{g.tipo}</span>
-                    <p className="text-gray-800 mt-1">{g.descripcion}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-lg font-bold text-blue-600">{g.moneda === 'USD' ? fmt(g.monto) : fmtARS(g.monto)}</p>
-                    <button onClick={() => handleDeleteGasto(g._id)} className="p-2 hover:bg-white rounded-lg"><Trash2 className="w-4 h-4 text-rose-500" /></button>
+                <div key={g._id} className="flex-shrink-0 w-56 p-4 bg-rose-50 rounded-xl border border-rose-100 snap-start flex flex-col gap-2">
+                  <span className={`self-start px-2 py-0.5 rounded-full text-xs font-medium ${g.tipo === 'expensas' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{g.tipo}</span>
+                  <p className="text-gray-800 text-sm font-medium flex-1">{g.descripcion}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-base font-bold text-blue-600">{g.moneda === 'USD' ? fmt(g.monto) : fmtARS(g.monto)}</p>
+                    <button onClick={() => handleDeleteGasto(g._id)} className="p-1.5 hover:bg-white rounded-lg"><Trash2 className="w-4 h-4 text-rose-400" /></button>
                   </div>
                 </div>
               ))}
@@ -888,56 +890,53 @@ function MiPortal() {
           </div>
         )}
 
-        {/* Historial de Mantenimiento */}
-        {mantenimientos.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="p-3 rounded-xl bg-amber-100"><Wrench className="w-6 h-6 text-amber-600" /></div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Historial de Mantenimiento</h2>
-                <p className="text-sm text-gray-500">Trabajos realizados en tu edificio</p>
-              </div>
-            </div>
-            {(() => {
-              const TIPO_COLORS = { limpieza: 'bg-blue-100 text-blue-700', mantenimiento: 'bg-amber-100 text-amber-700', reparacion: 'bg-rose-100 text-rose-700', inspeccion: 'bg-purple-100 text-purple-700', otro: 'bg-gray-100 text-gray-700' };
-              const agrupados = mantenimientos.reduce((acc, r) => {
-                const key = r.edificio?._id || 'sin';
-                const label = r.edificio?.nombre || 'Edificio';
-                if (!acc[key]) acc[key] = { label, items: [] };
-                acc[key].items.push(r);
-                return acc;
-              }, {});
-              return Object.entries(agrupados).map(([key, grupo]) => (
-                <div key={key} className="mb-4 last:mb-0">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{grupo.label}</p>
-                  <div className="space-y-3">
-                    {grupo.items.map(r => (
-                      <div key={r._id} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                        {r.imagen ? (
-                          <a href={r.imagen} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-                            <img src={r.imagen} alt={r.titulo} className="w-14 h-14 object-contain rounded-lg border border-amber-200 bg-white" />
-                          </a>
-                        ) : (
-                          <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-amber-100 flex items-center justify-center">
-                            <Wrench className="w-5 h-5 text-amber-400" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TIPO_COLORS[r.tipo] || 'bg-gray-100 text-gray-600'}`}>{r.tipo}</span>
-                            <span className="text-xs text-gray-400">{new Date(r.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' })}</span>
-                          </div>
-                          <p className="font-semibold text-gray-800 text-sm">{r.titulo}</p>
-                          {r.descripcion && <p className="text-gray-500 text-xs mt-0.5">{r.descripcion}</p>}
-                        </div>
-                      </div>
-                    ))}
+        {/* Historial de Mantenimiento — Carrusel */}
+        {mantenimientos.length > 0 && (() => {
+          const TIPO_COLORS = { limpieza: 'bg-blue-100 text-blue-700', mantenimiento: 'bg-amber-100 text-amber-700', reparacion: 'bg-rose-100 text-rose-700', inspeccion: 'bg-purple-100 text-purple-700', otro: 'bg-gray-100 text-gray-700' };
+          return (
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-amber-100"><Wrench className="w-6 h-6 text-amber-600" /></div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">Historial de Mantenimiento</h2>
+                    <p className="text-sm text-gray-500">Trabajos realizados en tu edificio</p>
                   </div>
                 </div>
-              ));
-            })()}
-          </div>
-        )}
+                {mantenimientos.length > 2 && (
+                  <div className="flex gap-2">
+                    <button onClick={() => scroll(mantRef, 'left')} className="p-2 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-700"><ChevronLeft className="w-5 h-5" /></button>
+                    <button onClick={() => scroll(mantRef, 'right')} className="p-2 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-700"><ChevronRight className="w-5 h-5" /></button>
+                  </div>
+                )}
+              </div>
+              <div ref={mantRef} className="flex gap-4 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: 'none' }}>
+                {mantenimientos.map(r => (
+                  <div key={r._id} className="flex-shrink-0 w-64 bg-amber-50 rounded-xl border border-amber-100 snap-start overflow-hidden">
+                    {r.imagen ? (
+                      <a href={r.imagen} target="_blank" rel="noopener noreferrer">
+                        <img src={r.imagen} alt={r.titulo} className="w-full h-36 object-contain bg-white border-b border-amber-100" />
+                      </a>
+                    ) : (
+                      <div className="w-full h-28 bg-amber-100 flex items-center justify-center">
+                        <Wrench className="w-8 h-8 text-amber-300" />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TIPO_COLORS[r.tipo] || 'bg-gray-100 text-gray-600'}`}>{r.tipo}</span>
+                        {r.edificio && <span className="text-xs text-gray-400">{r.edificio.nombre}</span>}
+                      </div>
+                      <p className="font-semibold text-gray-800 text-sm">{r.titulo}</p>
+                      {r.descripcion && <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{r.descripcion}</p>}
+                      <p className="text-xs text-gray-400 mt-2">{new Date(r.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Beneficios - Carrusel */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100">
