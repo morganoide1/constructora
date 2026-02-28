@@ -62,7 +62,7 @@ function TabLiquidaciones({ edificios }) {
     try {
       const payload = {
         edificio,
-        periodo: { mes, año },
+        periodo: { mes: parseInt(mes) || 1, año: parseInt(año) || new Date().getFullYear() },
         gastos: liq.gastos.map(g => ({ descripcion: g.descripcion, monto: parseFloat(g.monto) || 0, esRecurrente: !!g.esRecurrente })),
         moneda: liq.moneda || 'ARS',
         fechaVencimiento: liq.fechaVencimiento || undefined,
@@ -131,7 +131,7 @@ function TabLiquidaciones({ edificios }) {
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-1">Año</label>
-            <input type="number" value={año} onChange={e => setAño(parseInt(e.target.value))} className="input-field" />
+            <input type="number" value={año} onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setAño(v); }} className="input-field" />
           </div>
         </div>
       </div>
