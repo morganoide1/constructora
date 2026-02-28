@@ -109,7 +109,7 @@ function Clientes() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800">{editingCliente ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
               <button onClick={() => { setShowModal(false); setEditingCliente(null); setForm({ nombre: '', email: '', password: '', telefono: '', role: 'cliente' }); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>

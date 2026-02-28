@@ -48,8 +48,8 @@ function Layout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       {/* Sidebar Desktop */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-green-200 shadow-lg hidden lg:block">
-        <div className="p-6">
+      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-green-200 shadow-lg hidden lg:flex lg:flex-col">
+        <div className="p-6 flex-1 overflow-y-auto pb-4">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl overflow-hidden">
               <img src="/logo.png" alt="Wave Realty" className="w-full h-full object-cover" />
@@ -81,7 +81,7 @@ function Layout() {
           </nav>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-green-200">
+        <div className="p-6 border-t border-green-200 flex-shrink-0">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold">
               {user?.nombre?.charAt(0).toUpperCase()}

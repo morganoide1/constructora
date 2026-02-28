@@ -971,7 +971,7 @@ function MiPortal() {
       {/* Modal Gasto */}
       {showGastoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800">Agregar Gasto</h3>
               <button onClick={() => setShowGastoModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
@@ -1023,7 +1023,7 @@ function MiPortal() {
       {/* Modal Reserva */}
       {showReservaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-gray-800">Confirmar Reserva</h3>
               <button onClick={() => setShowReservaModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
@@ -1053,7 +1053,7 @@ function MiPortal() {
       {/* Modal Denuncia */}
       {showDenunciaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800">Nueva Denuncia</h3>
               <button onClick={() => setShowDenunciaModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
