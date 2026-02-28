@@ -60,6 +60,7 @@ router.get('/', auth, adminOnly, async (req, res) => {
     const ventas = await Venta.find()
       .populate('propiedad', 'codigo nombre')
       .populate('cliente', 'nombre email')
+      .populate('coTitulares', 'nombre email')
       .sort({ fechaVenta: -1 });
     res.json(ventas);
   } catch (error) {
@@ -72,15 +73,20 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const venta = await Venta.findById(req.params.id)
       .populate('propiedad')
-      .populate('cliente', 'nombre email telefono');
+      .populate('cliente', 'nombre email telefono')
+      .populate('coTitulares', 'nombre email');
 
     if (!venta) {
       return res.status(404).json({ error: 'Venta no encontrada' });
     }
 
-    // Clientes solo pueden ver sus propias ventas
-    if (req.user.role === 'cliente' && venta.cliente._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Acceso denegado' });
+    // Clientes solo pueden ver sus propias ventas (o si son co-titulares)
+    if (req.user.role === 'cliente') {
+      const esTitular = venta.cliente._id.toString() === req.user._id.toString();
+      const esCoTitular = (venta.coTitulares || []).some(ct => ct._id.toString() === req.user._id.toString());
+      if (!esTitular && !esCoTitular) {
+        return res.status(403).json({ error: 'Acceso denegado' });
+      }
     }
 
     res.json(venta);
@@ -130,18 +136,20 @@ router.post('/', auth, adminOnly, async (req, res) => {
 // Actualizar venta
 router.put("/:id", auth, adminOnly, async (req, res) => {
   try {
-    const { precioVenta, anticipo } = req.body;
+    const { precioVenta, anticipo, clienteId, coTitulares } = req.body;
     const venta = await Venta.findById(req.params.id);
     if (!venta) return res.status(404).json({ error: "Venta no encontrada" });
-    
+
     if (precioVenta) venta.precioVenta = precioVenta;
     if (anticipo) venta.anticipo = anticipo;
-    
+    if (clienteId) venta.cliente = clienteId;
+    if (Array.isArray(coTitulares)) venta.coTitulares = coTitulares;
+
     // Recalcular saldo pendiente
     const totalPagado = venta.cuotas.filter(c => c.estado === "pagada").reduce((sum, c) => sum + c.monto, 0) + (venta.anticipo?.pagado ? venta.anticipo.monto : 0);
     venta.totalPagado = totalPagado;
     venta.saldoPendiente = venta.precioVenta - totalPagado;
-    
+
     await venta.save();
     res.json(venta);
   } catch (error) {

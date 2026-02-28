@@ -22,7 +22,7 @@ function Ventas() {
   const [propForm, setPropForm] = useState({ codigo: '', nombre: '', tipo: 'departamento', precioLista: '', valorFuturo: '', edificio: '', ubicacion: { piso: '', unidad: '' } });
   const [ventaForm, setVentaForm] = useState({ propiedadId: '', clienteId: '', precioVenta: '', anticipo: { monto: '' }, modalidad: 'cuotas', cuotasNum: 12 });
   const [pagoForm, setPagoForm] = useState({ tipoPago: 'cuota', cuotaNumero: '', monto: '', cajaId: '', notas: '' });
-  const [editVentaForm, setEditVentaForm] = useState({ precioVenta: '', anticipo: '' });
+  const [editVentaForm, setEditVentaForm] = useState({ precioVenta: '', anticipo: '', clienteId: '', coTitulares: [] });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -114,14 +114,24 @@ function Ventas() {
 
   const handleEditVenta = (v) => {
     setEditingVenta(v._id);
-    setEditVentaForm({ precioVenta: v.precioVenta, anticipo: v.anticipo?.monto || 0 });
+    setEditVentaForm({
+      precioVenta: v.precioVenta,
+      anticipo: v.anticipo?.monto || 0,
+      clienteId: v.cliente?._id || v.cliente || '',
+      coTitulares: (v.coTitulares || []).map(ct => ct._id || ct)
+    });
     setShowEditVentaModal(true);
   };
 
   const handleUpdateVenta = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`/api/ventas/${editingVenta}`, { precioVenta: parseFloat(editVentaForm.precioVenta), anticipo: { monto: parseFloat(editVentaForm.anticipo) || 0 } });
+      await axios.put(`/api/ventas/${editingVenta}`, {
+        precioVenta: parseFloat(editVentaForm.precioVenta),
+        anticipo: { monto: parseFloat(editVentaForm.anticipo) || 0 },
+        clienteId: editVentaForm.clienteId,
+        coTitulares: editVentaForm.coTitulares
+      });
       setShowEditVentaModal(false);
       setEditingVenta(null);
       fetchData();
@@ -248,7 +258,12 @@ function Ventas() {
                 {ventas.map(v => (
                   <tr key={v._id} className="border-b border-gray-100 hover:bg-green-50">
                     <td className="py-3 text-gray-800">{v.propiedad?.nombre || v.propiedad?.codigo}</td>
-                    <td className="py-3 text-gray-800">{v.cliente?.nombre}</td>
+                    <td className="py-3 text-gray-800">
+                      <span>{v.cliente?.nombre}</span>
+                      {v.coTitulares?.length > 0 && (
+                        <span className="ml-1 text-xs text-gray-400">+{v.coTitulares.length}</span>
+                      )}
+                    </td>
                     <td className="py-3 text-gray-800">{fmt(v.precioVenta)}</td>
                     <td className="py-3 text-emerald-600">{fmt(v.totalPagado)}</td>
                     <td className="py-3 text-amber-600">{fmt(v.saldoPendiente)}</td>
@@ -435,6 +450,39 @@ function Ventas() {
               <button onClick={() => setShowEditVentaModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
             </div>
             <form onSubmit={handleUpdateVenta} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Titular principal</label>
+                <select value={editVentaForm.clienteId} onChange={(e) => setEditVentaForm({...editVentaForm, clienteId: e.target.value})} className="input-field" required>
+                  <option value="">Seleccionar...</option>
+                  {clientes.map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Co-titulares (opcional)</label>
+                <div className="border border-gray-200 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
+                  {clientes.filter(c => c._id !== editVentaForm.clienteId).map(c => (
+                    <label key={c._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                      <input
+                        type="checkbox"
+                        checked={editVentaForm.coTitulares.includes(c._id)}
+                        onChange={(e) => {
+                          setEditVentaForm(f => ({
+                            ...f,
+                            coTitulares: e.target.checked
+                              ? [...f.coTitulares, c._id]
+                              : f.coTitulares.filter(id => id !== c._id)
+                          }));
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm text-gray-700">{c.nombre}</span>
+                    </label>
+                  ))}
+                </div>
+                {editVentaForm.coTitulares.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">{editVentaForm.coTitulares.length} co-titular(es) seleccionado(s)</p>
+                )}
+              </div>
               <div><label className="block text-sm text-gray-600 mb-2">Precio Venta (USD)</label><input type="number" value={editVentaForm.precioVenta} onChange={(e) => setEditVentaForm({...editVentaForm, precioVenta: e.target.value})} className="input-field" required /></div>
               <div><label className="block text-sm text-gray-600 mb-2">Anticipo (USD)</label><input type="number" value={editVentaForm.anticipo} onChange={(e) => setEditVentaForm({...editVentaForm, anticipo: e.target.value})} className="input-field" /></div>
               <button type="submit" className="w-full btn-primary justify-center">Guardar Cambios</button>

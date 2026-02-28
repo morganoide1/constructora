@@ -18,7 +18,7 @@ router.get('/mis-gastos', auth, async (req, res) => {
 
 router.get('/mis-propiedades', auth, async (req, res) => {
   try {
-    const ventas = await Venta.find({ cliente: req.user._id })
+    const ventas = await Venta.find({ $or: [{ cliente: req.user._id }, { coTitulares: req.user._id }] })
       .populate('propiedad', 'nombre codigo');
     const propiedades = ventas.map(v => v.propiedad);
     res.json(propiedades);
